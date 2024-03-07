@@ -1,0 +1,22 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go converage tool, sepciallly when used with LiteIDE
+*.out
+
+#project
+*.cert
+*.key
+*.log
+bin/
+
+# Develop tools
+.idea/
+.vscode/
+*.swp
