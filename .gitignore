@@ -10,6 +10,17 @@
 # Output of the go converage tool, sepciallly when used with LiteIDE
 *.out
 
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# Go workspace file
+go.work
+
+# Complied Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+
+
 #project
 *.cert
 *.key
@@ -20,3 +31,13 @@ bin/
 .idea/
 .vscode/
 *.swp
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+/dist*
+
+# data volumes
+volumes/
