@@ -2,7 +2,8 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/wsqigo/basic-go/webhook/internal/repository"
 	"github.com/wsqigo/basic-go/webhook/internal/repository/dao"
@@ -46,7 +47,21 @@ func initWebServer() *gin.Engine {
 
 	// 存储数据的，也就是你 userId 存哪里
 	// 直接存 cookie
-	store := sessions.NewCookieStore([]byte("secret"))
+	//store := cookie.NewStore([]byte("secret"))
+	// 基于内存的实现，第一个参数是 authentication key，最好是 32 位或者 64 位
+	// 第二个参数是 encryption key
+	//store := memstore.NewStore([]byte("S4EWBerIvPWZCfH8jpFRBByIE5HcBfiP"),
+	//	[]byte("anouWji8NjQi8wJ1LUI4TyZMM5xTz2zZ"))
+	// 第一个参数是最大空闲连接数
+	// 第二个参数就是 tcp，你不太可能用 udp
+	// 第三、四个就是连接信息和密码
+	// 第五和第六就是两个 key
+	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+		[]byte("S4EWBerIvPWZCfH8jpFRBByIE5HcBfiP"), []byte("anouWji8NjQi8wJ1LUI4TyZMM5xTz2zZ"))
+	if err != nil {
+		panic(err)
+	}
+	// cookie 的名字叫做 mysession
 	server.Use(sessions.Sessions("mysession", store))
 	server.Use(middleware.NewLoginMiddlewareBuilder().
 		IgnorePaths("/users/signup").

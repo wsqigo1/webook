@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type LoginMiddlewareBuilder struct {
@@ -33,6 +34,18 @@ func (l *LoginMiddlewareBuilder) Build() gin.HandlerFunc {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
+		updateTime := sess.Get("update_time")
+		now := time.Now().UnixMilli()
+		// 说明还没有刷新过，刚登陆，还没刷新过
+		if updateTime == nil {
+			sess.Set("update_time", now)
+			sess.Save()
+			return
+		}
+
+		// updateTime 是有的
+
 	}
 }
 

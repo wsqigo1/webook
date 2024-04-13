@@ -1,7 +1,7 @@
 package web
 
 import (
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/gin-contrib/sessions"
 	"github.com/wsqigo/basic-go/webhook/internal/domain"
 	"github.com/wsqigo/basic-go/webhook/internal/service"
 	"net/http"
@@ -127,6 +127,8 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	// 你要放在 session 里面的值
 	sess.Set("userId", user.Id)
 	sess.Options(sessions.Options{
+		//Secure: true,
+		//HttpOnly: true,
 		// 15 分钟
 		MaxAge: 900,
 	})
