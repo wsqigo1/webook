@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/axios/axios";
 import router from "next/router";
 const instance = axios.create({
     // 这边记得修改你对应的配置文件
@@ -28,7 +28,7 @@ instance.interceptors.response.use(function (resp) {
     // }
     return err
 })
-
+//
 // 在这里让每一个请求都加上 authorization 的头部
 instance.interceptors.request.use((req) => {
     const token = localStorage.getItem("token")

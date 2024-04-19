@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"github.com/wsqigo/basic-go/webhook/internal/domain"
-	"github.com/wsqigo/basic-go/webhook/internal/repository/dao"
+	"github.com/wsqigo/basic-go/webook/internal/domain"
+	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 )
 
 var (

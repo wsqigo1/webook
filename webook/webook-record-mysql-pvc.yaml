@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webook-mysql-pvc
+spec:
+  storageClassName: record
+  # 访问模式，这里主要是控制能不能被多个 pod 读写
+  # ReadWriteOnce: 表示该持久卷只能被单个节点以读写模式挂载
+  accessModes:
+    - ReadWriteOnce
+  # 究竟需要什么资源
+  resources:
+    requests:
+      storage: 1Gi

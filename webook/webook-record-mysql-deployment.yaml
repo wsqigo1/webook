@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webook-record-mysql
+  labels:
+    app: webook-record-mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webook-record-mysql
+  template:
+    metadata:
+      name: webook-record-mysql
+      labels:
+        app: webook-record-mysql
+    spec:
+      containers:
+        - name: webook-record-mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+          imagePullPolicy: IfNotPresent
+          # 默认情况下，部署的 mysql 是监听 3306 端口的
+          ports:
+            - containerPort: 3306
+          # mysql 的数据怎么存储
+          volumeMounts:
+            # 这两个配置的意思是，mysql 的数据存在 mysql-story
+            - mountPath: /var/lib/mysql
+              name: mysql-storage
+      restartPolicy: Always
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            # PVC persistent volume claim
+            claimName: webook-mysql-pvc

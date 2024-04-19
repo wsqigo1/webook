@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/wsqigo/basic-go/webhook/internal/domain"
-	"github.com/wsqigo/basic-go/webhook/internal/repository"
+	"github.com/wsqigo/basic-go/webook/internal/domain"
+	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 

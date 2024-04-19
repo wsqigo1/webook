@@ -5,8 +5,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/wsqigo/basic-go/webhook/internal/domain"
-	"github.com/wsqigo/basic-go/webhook/internal/service"
+	"github.com/wsqigo/basic-go/webook/internal/domain"
+	"github.com/wsqigo/basic-go/webook/internal/service"
 	"net/http"
 	"time"
 )

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # 代表这是我们的 webook 本体
+  name: webook-record
+spec:
+  selector:
+    app: webook-record
+  ports:
+    # 这个名字你们随意的
+    - name: http
+      # 这边因为我本机上启用了很多东西，所以避免端口冲突
+      # 你自己就优先用 80
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  type: LoadBalancer
+  

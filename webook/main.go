@@ -6,23 +6,28 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"github.com/wsqigo/basic-go/webhook/internal/repository"
-	"github.com/wsqigo/basic-go/webhook/internal/repository/dao"
-	"github.com/wsqigo/basic-go/webhook/internal/service"
-	"github.com/wsqigo/basic-go/webhook/internal/web"
-	"github.com/wsqigo/basic-go/webhook/internal/web/middleware"
-	"github.com/wsqigo/basic-go/webhook/pkg/ginx/middleware/ratelimit"
+	"github.com/wsqigo/basic-go/webook/internal/repository"
+	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
+	"github.com/wsqigo/basic-go/webook/internal/service"
+	"github.com/wsqigo/basic-go/webook/internal/web"
+	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
+	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/ratelimit"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
 	"strings"
 	"time"
 )
 
 func main() {
-	db := initDB()
-	server := initWebServer()
-
-	initUserHdl(db, server)
+	//db := initDB()
+	//
+	//server := initWebServer()
+	//initUserHdl(db, server)
+	server := gin.Default()
+	server.GET("/hello", func(ctx *gin.Context) {
+		ctx.String(http.StatusOK, "hello world")
+	})
 	server.Run(":8080")
 }
 
