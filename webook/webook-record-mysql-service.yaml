@@ -7,7 +7,7 @@ spec:
     app: webook-record-mysql
   ports:
     - protocol: TCP
-      port: 3306
+      port: 13306
       targetPort: 3306
   type: LoadBalancer
   
