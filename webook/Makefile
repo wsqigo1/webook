@@ -6,7 +6,7 @@ docker:
 	@go mod tidy
 	# 指定编译成在 ARM 架构的 linux 操作系统 linux 操作系统上运行的可执行文件，
 	# 名字叫做 webook
-	@GOOS=linux GOARCH=arm go build -o webook .
+	@GOOS=linux GOARCH=arm go build -tags=k8s -o webook .
 	@docker rmi -f wsqigo/webook:v0.0.1
 	# 这里你可以随便改这个标签，记得对应的 k8s 部署里面也要改
 	@docker build -t wsqigo/webook:v0.0.1 .

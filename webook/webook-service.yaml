@@ -11,7 +11,7 @@ spec:
     - name: http
       # 这边因为我本机上启用了很多东西，所以避免端口冲突
       # 你自己就优先用 80
-      port: 80
+      port: 98
       protocol: TCP
       targetPort: 8080
   type: ClusterIP

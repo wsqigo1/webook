@@ -4,6 +4,8 @@ metadata:
   name: webook-record-service
 spec:
   # 三个副本
+  # 作业：
+  # replicas: 2
   replicas: 3
   selector:
     matchLabels:

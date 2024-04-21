@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"github.com/wsqigo/basic-go/webook/config"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
@@ -20,14 +21,16 @@ import (
 )
 
 func main() {
-	//db := initDB()
-	//
-	//server := initWebServer()
-	//initUserHdl(db, server)
-	server := gin.Default()
+	db := initDB()
+
+	server := initWebServer()
+	initUserHdl(db, server)
+	//server := gin.Default()
 	server.GET("/hello", func(ctx *gin.Context) {
-		ctx.String(http.StatusOK, "hello world")
+		ctx.String(http.StatusOK, "hello，启动成功了")
 	})
+	// 作业：改成 8081
+	//server.Run(":8081")
 	server.Run(":8080")
 }
 
@@ -54,7 +57,7 @@ func initWebServer() *gin.Engine {
 	}))
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: config.Config.Redis.Addr,
 	})
 
 	server.Use(ratelimit.NewBuilder(redisClient,
@@ -105,7 +108,7 @@ func initUserHdl(db *gorm.DB, server *gin.Engine) {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		// 我只会在初始化过程中 panic
 		// panic 相当于整个 goroutine 结束

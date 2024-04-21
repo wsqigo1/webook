@@ -8,6 +8,8 @@ spec:
   ports:
     - protocol: TCP
       port: 13306
+      # 作业
+      # port: 3308
       targetPort: 3306
   type: LoadBalancer
   
