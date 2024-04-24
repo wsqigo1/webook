@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
@@ -72,6 +73,9 @@ type User struct {
 	// YYYY-MM-DD
 	Birthday int64
 	AboutMe  string `gorm:"type=varchar(4096)"`
+
+	// 代表这是一个可以为 NULL 的列
+	Phone sql.NullString `gorm:"unique"`
 
 	// 创建时间，毫秒数
 	Ctime int64

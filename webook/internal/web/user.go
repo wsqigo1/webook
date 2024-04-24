@@ -158,7 +158,7 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 			UserAgent: ctx.GetHeader("User-Agent"),
 			RegisteredClaims: jwt.RegisteredClaims{
 				// 5 分钟过期
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 5)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 			},
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
@@ -178,11 +178,8 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 
 // Profile 用户详情
 func (h *UserHandler) Profile(ctx *gin.Context) {
-	type Profile struct {
-		Email string
-	}
 	us := ctx.MustGet("user").(UserClaims)
-	user, err := h.svc.Profile(ctx, us.Uid)
+	user, err := h.svc.FindById(ctx, us.Uid)
 	if err != nil {
 		// 按照道理来说，这边 id 对应的数据肯定存在，所以要是没找到，
 		// 那说明是系统出了问题
@@ -190,8 +187,18 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, Profile{
-		Email: user.Email,
+	type User struct {
+		Nickname string `json:"nickname"`
+		Email    string `json:"email"`
+		AboutMe  string `json:"aboutMe"`
+		Birthday string `json:"birthday"`
+	}
+
+	ctx.JSON(http.StatusOK, User{
+		Email:    user.Email,
+		Nickname: user.Nickname,
+		AboutMe:  user.AboutMe,
+		Birthday: user.Birthday.Format(time.DateOnly),
 	})
 }
 
@@ -211,6 +218,12 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
+	uc, ok := ctx.MustGet("user").(UserClaims)
+	if !ok {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	// 用户输入不对
 	birthday, err := time.Parse(time.DateOnly, req.Birthday)
 	if err != nil {
@@ -218,22 +231,15 @@ func (h *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
-	sess := sessions.Default(ctx)
-	id := sess.Get("userId").(int64)
-
 	// 调用一下 svc 方法
 	err = h.svc.UpdateNonSensitiveInfo(ctx, domain.User{
-		Id:       id,
+		Id:       uc.Uid,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,
 	})
-	if err == service.ErrDuplicateEmail {
-		ctx.String(http.StatusOK, "邮箱冲突")
-		return
-	}
 	if err != nil {
-		ctx.String(http.StatusOK, "系统错误")
+		ctx.String(http.StatusOK, "系统异常")
 		return
 	}
 

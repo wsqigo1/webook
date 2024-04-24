@@ -5,14 +5,12 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"github.com/wsqigo/basic-go/webook/config"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/web"
 	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
-	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/ratelimit"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"net/http"
@@ -56,12 +54,12 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
-
-	server.Use(ratelimit.NewBuilder(redisClient,
-		time.Second, 1).Build())
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr: config.Config.Redis.Addr,
+	//})
+	//
+	//server.Use(ratelimit.NewBuilder(redisClient,
+	//	time.Second, 1).Build())
 
 	useJWT(server)
 	//useSession(server)

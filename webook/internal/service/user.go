@@ -54,7 +54,7 @@ func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context, user domain.
 	return svc.repo.UpdateNonZeroFields(ctx, user)
 }
 
-func (svc *UserService) Profile(ctx context.Context, userId int64) (domain.User, error) {
+func (svc *UserService) FindById(ctx context.Context, userId int64) (domain.User, error) {
 	u, err := svc.repo.FindById(ctx, userId)
 	return u, err
 }
