@@ -66,7 +66,7 @@ func (dao *UserDAO) FindById(ctx context.Context, uid int64) (User, error) {
 type User struct {
 	Id int64 `gorm:"primaryKey,autoIncrement"`
 	// 全部用户唯一
-	Email    string `gorm:"unique"`
+	Email    sql.NullString `gorm:"unique"`
 	Password string
 
 	Nickname string `gorm:"type=varchar(128)"`
