@@ -9,15 +9,15 @@ import (
 )
 
 func TestSender(t *testing.T) {
-	secretId := os.Getenv("SMS_SECRET_ID")
-	secretKey := os.Getenv("SMS_SECRET_KEY")
+	secretId, _ := os.LookupEnv("ALI_ACCESS_KEY_ID")
+	secretKey, _ := os.LookupEnv("ALI_ACCESS_KEY_SECRET")
 
 	c, err := dysmsapi.NewClientWithAccessKey("cn-hangzhou", secretId, secretKey)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	s := NewService(c, "", "")
+	s := NewService(c, "量链科技")
 
 	testCases := []struct {
 		name    string
@@ -28,10 +28,10 @@ func TestSender(t *testing.T) {
 	}{
 		{
 			name:   "发送验证码",
-			tplId:  "187756",
+			tplId:  "SMS_186030080",
 			params: []string{"123456"},
 			// 改成你的手机号
-			numbers: []string{""},
+			numbers: []string{"19124155294"},
 		},
 	}
 	for _, tc := range testCases {
