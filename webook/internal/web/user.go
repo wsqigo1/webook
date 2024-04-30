@@ -281,6 +281,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	type User struct {
 		Nickname string `json:"nickname"`
 		Email    string `json:"email"`
+		Phone    string `json:"phone"`
 		AboutMe  string `json:"aboutMe"`
 		Birthday string `json:"birthday"`
 	}
@@ -289,6 +290,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 		Email:    user.Email,
 		Nickname: user.Nickname,
 		AboutMe:  user.AboutMe,
+		Phone:    user.Phone,
 		Birthday: user.Birthday.Format(time.DateOnly),
 	})
 }
