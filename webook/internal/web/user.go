@@ -46,7 +46,7 @@ func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 
 	// 手机验证码登录相关功能
 	ug.POST("/login_sms/code/send", h.SendSMSLoginCode)
-	ug.POST("/login_sms")
+	ug.POST("/login_sms", h.LoginSMS)
 }
 
 func (h *UserHandler) LoginSMS(ctx *gin.Context) {

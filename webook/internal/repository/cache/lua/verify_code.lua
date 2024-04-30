@@ -8,7 +8,7 @@ local cnt = tonumber(redis.call("get", cntKey))
 local code = redis.call("get", key)
 
 -- 验证次数已经耗尽了
-if ctn == nil or cnt <= 0 then
+if cnt == nil or cnt <= 0 then
     return -1
 end
 -- 验证码相等

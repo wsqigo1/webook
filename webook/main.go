@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -11,11 +12,13 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/repository/cache"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
+	"github.com/wsqigo/basic-go/webook/internal/service/sms/aliyun"
 	"github.com/wsqigo/basic-go/webook/internal/web"
 	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -76,7 +79,8 @@ func useJWT(server *gin.Engine) {
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
 		IgnorePaths("/users/signup").
 		IgnorePaths("/users/login").
-		IgnorePaths("/users/CheckLogin()").CheckLogin())
+		IgnorePaths("/users/login_sms/code/send").
+		IgnorePaths("/users/login_sms").CheckLogin())
 }
 
 func useSession(server *gin.Engine) {
@@ -97,7 +101,7 @@ func useSession(server *gin.Engine) {
 	//	panic(err)
 	//}
 	// cookie 的名字叫做 mysession
-	server.Use(sessions.Sessions("mysess  ion", store))
+	server.Use(sessions.Sessions("mysession", store))
 	server.Use(middleware.NewLoginMiddlewareBuilder().
 		IgnorePaths("/users/signup").
 		IgnorePaths("/users/login").CheckLogin())
@@ -115,7 +119,16 @@ func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeSe
 func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
 	cc := cache.NewCodeCache(redisClient)
 	crepo := repository.NewCodeRepository(cc)
-	return service.NewCodeService(crepo, nil)
+
+	const signName = "量链科技"
+	secretId := os.Getenv("ALI_ACCESS_KEY_ID")
+	secretKey := os.Getenv("ALI_ACCESS_KEY_SECRET")
+	smsClient, err := dysmsapi.NewClientWithAccessKey("cn-hangzhou", secretId, secretKey)
+	if err != nil {
+		panic(err)
+	}
+
+	return service.NewCodeService(crepo, aliyun.NewService(smsClient, signName))
 }
 
 func initDB() *gorm.DB {

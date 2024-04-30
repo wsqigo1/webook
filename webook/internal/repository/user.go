@@ -79,6 +79,7 @@ func (repo *UserRepository) toDomain(u dao.User) domain.User {
 		Nickname: u.Nickname,
 		Birthday: time.UnixMilli(u.Birthday),
 		AboutMe:  u.AboutMe,
+		Ctime:    time.UnixMilli(u.Ctime),
 	}
 }
 

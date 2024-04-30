@@ -28,7 +28,7 @@ func (svc *CodeService) Send(ctx context.Context, biz, phone string) error {
 	if err != nil {
 		return err
 	}
-	const codeTplId = "SMS_465885017"
+	const codeTplId = "SMS_186030080"
 	return svc.sms.Send(ctx, codeTplId, []string{code}, phone)
 }
 

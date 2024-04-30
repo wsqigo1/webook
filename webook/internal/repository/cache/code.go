@@ -45,7 +45,7 @@ func (c *CodeCache) Set(ctx context.Context, biz, phone, code string) error {
 }
 
 func (c *CodeCache) Verify(ctx context.Context, biz, phone, code string) (bool, error) {
-	res, err := c.cmd.Eval(ctx, luaVerifyCode, []string{c.key(biz, phone), code}).Int()
+	res, err := c.cmd.Eval(ctx, luaVerifyCode, []string{c.key(biz, phone)}, code).Int()
 	if err != nil {
 		// 调用 redis 出了问题
 		return false, err
