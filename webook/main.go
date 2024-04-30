@@ -5,8 +5,10 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/wsqigo/basic-go/webook/config"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
+	"github.com/wsqigo/basic-go/webook/internal/repository/cache"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/web"
@@ -20,9 +22,12 @@ import (
 
 func main() {
 	db := initDB()
-
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
 	server := initWebServer()
-	initUserHdl(db, server)
+	codeSvc := initCodeSvc(redisClient)
+	initUserHdl(db, redisClient, codeSvc, server)
 	//server := gin.Default()
 	server.GET("/hello", func(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "hello，启动成功了")
@@ -70,7 +75,8 @@ func initWebServer() *gin.Engine {
 func useJWT(server *gin.Engine) {
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
 		IgnorePaths("/users/signup").
-		IgnorePaths("/users/login").CheckLogin())
+		IgnorePaths("/users/login").
+		IgnorePaths("/users/CheckLogin()").CheckLogin())
 }
 
 func useSession(server *gin.Engine) {
@@ -91,18 +97,25 @@ func useSession(server *gin.Engine) {
 	//	panic(err)
 	//}
 	// cookie 的名字叫做 mysession
-	server.Use(sessions.Sessions("mysession", store))
+	server.Use(sessions.Sessions("mysess  ion", store))
 	server.Use(middleware.NewLoginMiddlewareBuilder().
 		IgnorePaths("/users/signup").
 		IgnorePaths("/users/login").CheckLogin())
 }
 
-func initUserHdl(db *gorm.DB, server *gin.Engine) {
+func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
 	ud := dao.NewUserDao(db)
-	repo := repository.NewUserRepository(ud)
-	svc := service.NewUserService(repo)
-	u := web.NewUserHandler(svc)
-	u.RegisterRoutes(server)
+	uc := cache.NewUserCache(redisClient)
+	ur := repository.NewUserRepository(ud, uc)
+	us := service.NewUserService(ur)
+	hdl := web.NewUserHandler(us, codeSvc)
+	hdl.RegisterRoutes(server)
+}
+
+func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	cc := cache.NewCodeCache(redisClient)
+	crepo := repository.NewCodeRepository(cc)
+	return service.NewCodeService(crepo, nil)
 }
 
 func initDB() *gorm.DB {

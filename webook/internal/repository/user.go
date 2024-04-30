@@ -11,14 +11,44 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = dao.ErrDuplicateEmail
-	ErrUserNotFound   = dao.ErrUserNotFount
+	ErrUserDuplicate = dao.ErrDuplicateEmail
+	ErrUserNotFound  = dao.ErrUserNotFount
 )
 
 type UserRepository struct {
 	cache *cache.UserCache
 	dao   *dao.UserDAO
 }
+
+//type DBConfig struct {
+//	DSN string
+//}
+
+//type CacheConfig struct {
+//	Addr string
+//}
+
+// NewUserRepositoryV2 强耦合到了 JSON
+//func NewUserRepositoryV2(cfgBytes string) *CachedUserRepository {
+//	var cfg DBConfig
+//	err := json.Unmarshal([]byte(cfgBytes), &cfg)
+//}
+
+// NewUserRepositoryV1 强耦合（跨层的），严重缺乏扩展性
+//func NewUserRepositoryV1(dbCfg DBConfig, cCfg CacheConfig) (*CachedUserRepository, error) {
+//	db, err := gorm.Open(mysql.Open(dbCfg.DSN))
+//	if err != nil {
+//		return nil, err
+//	}
+//	ud := dao.NewUserDAO(db)
+//	uc := cache.NewUserCache(redis.NewClient(&redis.Options{
+//		Addr: cCfg.Addr,
+//	}))
+//	return &CachedUserRepository{
+//		dao:   ud,
+//		cache: uc,
+//	}, nil
+//}
 
 func NewUserRepository(d *dao.UserDAO, c *cache.UserCache) *UserRepository {
 	return &UserRepository{
@@ -44,6 +74,7 @@ func (repo *UserRepository) toDomain(u dao.User) domain.User {
 	return domain.User{
 		Id:       u.Id,
 		Email:    u.Email.String,
+		Phone:    u.Phone.String,
 		Password: u.Password,
 		Nickname: u.Nickname,
 		Birthday: time.UnixMilli(u.Birthday),
@@ -57,6 +88,10 @@ func (repo *UserRepository) toEntity(u domain.User) dao.User {
 		Email: sql.NullString{
 			String: u.Email,
 			Valid:  u.Email != "",
+		},
+		Phone: sql.NullString{
+			String: u.Phone,
+			Valid:  u.Phone != "",
 		},
 		Password: u.Password,
 		Birthday: u.Birthday.UnixMilli(),
@@ -122,5 +157,13 @@ func (repo *UserRepository) FindByIdV2(ctx context.Context, uid int64) (domain.U
 		// 接近降级的写法
 		return domain.User{}, err
 	}
+}
 
+func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	u, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+	du := repo.toDomain(u)
+	return du, nil
 }

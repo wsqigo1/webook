@@ -61,11 +61,18 @@ func (dao *UserDAO) FindById(ctx context.Context, uid int64) (User, error) {
 	return u, err
 }
 
+func (dao *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&u).Error
+	return u, err
+}
+
 // User 直接对应数据库表结构
 // 有些人叫做 entity，有些人叫做 model，有些人叫做 PO(persistent object)
 type User struct {
 	Id int64 `gorm:"primaryKey,autoIncrement"`
 	// 全部用户唯一
+	// 代表这是一个可以为 NULL 的列
 	Email    sql.NullString `gorm:"unique"`
 	Password string
 
