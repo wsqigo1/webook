@@ -101,8 +101,104 @@ func TestUserHandler_SignUp(t *testing.T) {
 				assert.NoError(t, err)
 				return req
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusOK,
 			wantBody: "非法邮箱格式",
+		},
+		{
+			name: "两次密码输入不同",
+			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+				userSvc := svcmocks.NewMockUserService(ctrl)
+				codeSvc := svcmocks.NewMockCodeService(ctrl)
+				return userSvc, codeSvc
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req, err := http.NewRequest(http.MethodPost,
+					"/users/signup", bytes.NewReader([]byte(`{
+"email": "123@qq.com",
+"password": "hello#world123455",
+"confirmPassword": "hello#world123"
+}
+`)))
+				req.Header.Set("Content-Type", "application/json")
+				assert.NoError(t, err)
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantBody: "两次输入密码不一致",
+		},
+		{
+			name: "密码格式不对",
+			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+				userSvc := svcmocks.NewMockUserService(ctrl)
+				codeSvc := svcmocks.NewMockCodeService(ctrl)
+				return userSvc, codeSvc
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req, err := http.NewRequest(http.MethodPost,
+					"/users/signup", bytes.NewReader([]byte(`{
+"email": "123@qq.com",
+"password": "hello",
+"confirmPassword": "hello"
+}
+`)))
+				req.Header.Set("Content-Type", "application/json")
+				assert.NoError(t, err)
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantBody: "密码必须包含字母、数字、特殊字符，并且不少于八位",
+		},
+		{
+			name: "系统错误",
+			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+				userSvc := svcmocks.NewMockUserService(ctrl)
+				userSvc.EXPECT().SignUp(gomock.Any(), domain.User{
+					Email:    "123@qq.com",
+					Password: "hello#world123",
+				}).Return(errors.New("db错误"))
+				codeSvc := svcmocks.NewMockCodeService(ctrl)
+				return userSvc, codeSvc
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req, err := http.NewRequest(http.MethodPost,
+					"/users/signup", bytes.NewReader([]byte(`{
+"email": "123@qq.com",
+"password": "hello#world123",
+"confirmPassword": "hello#world123"
+}
+`)))
+				req.Header.Set("Content-Type", "application/json")
+				assert.NoError(t, err)
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantBody: "系统错误",
+		},
+		{
+			name: "邮箱冲突",
+			mock: func(ctrl *gomock.Controller) (service.UserService, service.CodeService) {
+				userSvc := svcmocks.NewMockUserService(ctrl)
+				userSvc.EXPECT().SignUp(gomock.Any(), domain.User{
+					Email:    "123@qq.com",
+					Password: "hello#world123",
+				}).Return(service.ErrDuplicateEmail)
+				codeSvc := svcmocks.NewMockCodeService(ctrl)
+				return userSvc, codeSvc
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req, err := http.NewRequest(http.MethodPost,
+					"/users/signup", bytes.NewReader([]byte(`{
+"email": "123@qq.com",
+"password": "hello#world123",
+"confirmPassword": "hello#world123"
+}
+`)))
+				req.Header.Set("Content-Type", "application/json")
+				assert.NoError(t, err)
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantBody: "邮箱冲突",
 		},
 	}
 

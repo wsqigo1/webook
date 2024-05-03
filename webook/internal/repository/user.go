@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrUserDuplicate = dao.ErrDuplicateEmail
-	ErrUserNotFound  = dao.ErrUserNotFount
+	ErrUserNotFound  = dao.ErrUserNotFound
 )
 
 type UserRepository interface {
@@ -58,7 +58,7 @@ type CachedUserRepository struct {
 //	}, nil
 //}
 
-func NewCachedUserRepository(d dao.UserDAO, c cache.UserCache) UserRepository {
+func NewUserRepository(d dao.UserDAO, c cache.UserCache) UserRepository {
 	return &CachedUserRepository{
 		dao:   d,
 		cache: c,
