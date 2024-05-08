@@ -4,29 +4,20 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"github.com/wsqigo/basic-go/webook/pkg/limiter"
 	"log"
 	"net/http"
-	"time"
 )
 
 type Builder struct {
-	prefix   string
-	cmd      redis.Cmdable
-	interval time.Duration
-	// 阈值
-	rate int
+	prefix  string
+	limiter limiter.Limiter
 }
 
-//go:embed slide_window.lua
-var luaScript string
-
-func NewBuilder(cmd redis.Cmdable, interval time.Duration, rate int) *Builder {
+func NewBuilder(l limiter.Limiter) *Builder {
 	return &Builder{
-		cmd:      cmd,
-		prefix:   "ip-limiter",
-		interval: interval,
-		rate:     rate,
+		prefix:  "ip-limiter",
+		limiter: l,
 	}
 }
 
@@ -37,7 +28,7 @@ func (b *Builder) Prefix(prefix string) *Builder {
 
 func (b *Builder) Build() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		limited, err := b.limit(ctx)
+		limited, err := b.limiter.Limit(ctx, b.key(ctx))
 		if err != nil {
 			log.Println(err)
 			// 这一步很有意思，就是如果这边出错了
@@ -57,8 +48,6 @@ func (b *Builder) Build() gin.HandlerFunc {
 	}
 }
 
-func (b *Builder) limit(ctx *gin.Context) (bool, error) {
-	key := fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
-	return b.cmd.Eval(ctx, luaScript, []string{key},
-		b.interval.Milliseconds(), b.rate, time.Now().UnixMilli()).Bool()
+func (b *Builder) key(ctx *gin.Context) string {
+	return fmt.Sprintf("%s:%s", b.prefix, ctx.ClientIP())
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/web"
 	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
 	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/ratelimit"
+	"github.com/wsqigo/basic-go/webook/pkg/limiter"
 	"strings"
 	"time"
 )
@@ -41,7 +42,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 		func(ctx *gin.Context) {
 			println("这是我的 Middleware")
 		},
-		ratelimit.NewBuilder(redisClient, time.Second, 1000).Build(),
+		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 10)).Build(),
 		middleware.NewLoginJWTMiddlewareBuilder().
 			IgnorePaths("/users/signup").
 			IgnorePaths("/users/login").

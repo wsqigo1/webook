@@ -2,19 +2,29 @@ package tencent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ecodeclub/ekit"
 	"github.com/ecodeclub/ekit/slice"
 	sms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
+	"github.com/wsqigo/basic-go/webook/pkg/limiter"
 )
 
 type Service struct {
 	client   *sms.Client
 	appId    *string
 	signName *string
+	limiter  limiter.Limiter
 }
 
 func (s *Service) Send(ctx context.Context, tplId string, args []string, numbers ...string) error {
+	limited, err := s.limiter.Limit(ctx, "tencent-sms-service")
+	if err != nil {
+		return err
+	}
+	if limited {
+		return errors.New("触发了限流")
+	}
 	request := sms.NewSendSmsRequest()
 	request.SetContext(ctx)
 	request.SmsSdkAppId = s.appId
@@ -48,8 +58,9 @@ func (s *Service) toPtrSlice(data []string) []*string {
 	})
 }
 
-func NewService(client *sms.Client, appId string, signName string) *Service {
+func NewService(client *sms.Client, appId string, signName string, l limiter.Limiter) *Service {
 	return &Service{
+		limiter:  l,
 		client:   client,
 		appId:    &appId,
 		signName: &signName,

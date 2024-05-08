@@ -7,6 +7,7 @@ import (
 
 var (
 	ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
+	ErrCodeSendTooMany   = cache.ErrCodeSendTooMany
 )
 
 type CodeRepository interface {
