@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/wsqigo/basic-go/webook/internal/web"
+	jwt2 "github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
 	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/ratelimit"
 	"github.com/wsqigo/basic-go/webook/pkg/limiter"
@@ -21,7 +22,7 @@ func InitWebServer(mdls []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable, hdl jwt2.Handler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			//AllowAllOrigins: true,
@@ -29,7 +30,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			//AllowMethods:     []string{"POST", "GET"},
 			AllowHeaders: []string{"Content-Type", "Authorization"},
 			// 这个是允许前端访问你的后端响应中带的头部
-			ExposeHeaders: []string{"x-jwt-token"},
+			ExposeHeaders: []string{"x-jwt-token", "x-refresh-token"},
 			// 是否允许带上用户认证信息，比如 cookie 之类的东西
 			AllowCredentials: true,
 			AllowOriginFunc: func(origin string) bool {
@@ -45,7 +46,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			println("这是我的 Middleware")
 		},
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 10)).Build(),
-		middleware.NewLoginJWTMiddlewareBuilder().
+		middleware.NewLoginJWTMiddlewareBuilder(hdl).
 			IgnorePaths("/users/signup").
 			IgnorePaths("/users/login").
 			IgnorePaths("/users/login_sms/code/send").

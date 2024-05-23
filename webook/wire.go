@@ -10,6 +10,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/web"
+	jwt2 "github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
@@ -36,6 +37,7 @@ func InitWebServer() *gin.Engine {
 		// handler 部分
 		web.NewUserHandler,
 		web.NewOAuth2DingDingHandler,
+		jwt2.NewRedisJWTHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

@@ -13,6 +13,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/web"
+	"github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
@@ -20,7 +21,8 @@ import (
 
 func InitWebServer() *gin.Engine {
 	cmdable := ioc.InitRedis()
-	v := ioc.InitGinMiddlewares(cmdable)
+	handler := jwt.NewRedisJWTHandler(cmdable)
+	v := ioc.InitGinMiddlewares(cmdable, handler)
 	db := ioc.InitDB()
 	userDAO := dao.NewUserDao(db)
 	userCache := cache.NewUserCache(cmdable)
@@ -30,9 +32,9 @@ func InitWebServer() *gin.Engine {
 	codeRepository := repository.NewCodeRepository(codeCache)
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
+	userHandler := web.NewUserHandler(userService, handler, codeService)
 	dingdingService := ioc.InitDingDingService()
-	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, userService)
+	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, handler, userService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2DingDingHandler)
 	return engine
 }

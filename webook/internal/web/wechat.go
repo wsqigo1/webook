@@ -7,23 +7,26 @@ import (
 	uuid "github.com/lithammer/shortuuid/v4"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/service/oauth2/wechat"
+	jwt2 "github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"net/http"
 )
 
 type OAuth2WechatHandler struct {
-	jwtHandler
+	jwt2.Handler
 	svc             wechat.Service
 	userSvc         service.UserService
 	key             []byte
 	stateCookieName string
 }
 
-func NewOAuth2WechatHandler(svc wechat.Service, userSvc service.UserService) *OAuth2WechatHandler {
+func NewOAuth2WechatHandler(svc wechat.Service,
+	hdl jwt2.Handler, userSvc service.UserService) *OAuth2WechatHandler {
 	return &OAuth2WechatHandler{
 		svc:             svc,
 		userSvc:         userSvc,
 		key:             []byte("S4EWBerIvPWZDfH9jpFRBByIE5HcBfiP"),
 		stateCookieName: "jwt-state",
+		Handler:         hdl,
 	}
 }
 
@@ -87,7 +90,11 @@ func (o *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
-	o.setJWTToken(ctx, u.Id)
+	err = o.SetLoginToken(ctx, u.Id)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
 	ctx.JSON(http.StatusOK, Result{
 		Msg: "OK",
 	})
