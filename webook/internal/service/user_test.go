@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
@@ -16,12 +17,12 @@ func TestPasswordEncrypt(t *testing.T) {
 	password := []byte("123456#hello")
 	encrypted, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
 	assert.NoError(t, err)
-	println(string(encrypted))
+	fmt.Println(string(encrypted))
 	err = bcrypt.CompareHashAndPassword(encrypted, []byte("123456#hello"))
 	assert.NoError(t, err)
 }
 
-func TestUserService_Login(t *testing.T) {
+func Test_userService_Login(t *testing.T) {
 	testCases := []struct {
 		name string
 
@@ -50,7 +51,8 @@ func TestUserService_Login(t *testing.T) {
 					}, nil)
 				return repo
 			},
-			email:    "123@qq.com",
+			email: "123@qq.com",
+			// 用户输入的，没有加密的
 			password: "123456#hello",
 
 			wantUser: domain.User{

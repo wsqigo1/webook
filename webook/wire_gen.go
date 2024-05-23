@@ -31,6 +31,8 @@ func InitWebServer() *gin.Engine {
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(userService, codeService)
-	engine := ioc.InitWebServer(v, userHandler)
+	dingdingService := ioc.InitDingDingService()
+	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, userService)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2DingDingHandler)
 	return engine
 }

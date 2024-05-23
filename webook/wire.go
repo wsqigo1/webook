@@ -29,11 +29,13 @@ func InitWebServer() *gin.Engine {
 
 		// Service 部分
 		ioc.InitSMSService,
+		ioc.InitDingDingService,
 		service.NewUserService,
 		service.NewCodeService,
 
 		// handler 部分
 		web.NewUserHandler,
+		web.NewOAuth2DingDingHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,

@@ -12,10 +12,12 @@ import (
 	"time"
 )
 
-func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler) *gin.Engine {
+func InitWebServer(mdls []gin.HandlerFunc,
+	userHdl *web.UserHandler, dingdingHdl *web.OAuth2DingDingHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)
 	userHdl.RegisterRoutes(server)
+	dingdingHdl.RegisterRoutes(server)
 	return server
 }
 
@@ -47,6 +49,10 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			IgnorePaths("/users/signup").
 			IgnorePaths("/users/login").
 			IgnorePaths("/users/login_sms/code/send").
-			IgnorePaths("/users/login_sms").CheckLogin(),
+			IgnorePaths("/users/login_sms").
+			IgnorePaths("/oauth2/wechat/authurl").
+			IgnorePaths("/oauth2/wechat/authurl").
+			IgnorePaths("/oauth2/dingding/authurl").
+			IgnorePaths("/oauth2/dingding/callback").CheckLogin(),
 	}
 }

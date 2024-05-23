@@ -21,6 +21,8 @@ type UserRepository interface {
 	UpdateNonZeroFields(ctx context.Context, user domain.User) error
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	FindById(ctx context.Context, uid int64) (domain.User, error)
+	FindByWechat(ctx context.Context, openId string) (domain.User, error)
+	FindByDDing(ctx context.Context, openId string) (domain.User, error)
 }
 
 type CachedUserRepository struct {
@@ -88,6 +90,14 @@ func (repo *CachedUserRepository) toDomain(u dao.User) domain.User {
 		Birthday: time.UnixMilli(u.Birthday),
 		AboutMe:  u.AboutMe,
 		Ctime:    time.UnixMilli(u.Ctime),
+		WechatInfo: domain.WechatInfo{
+			OpenId:  u.WechatOpenId.String,
+			UnionId: u.WechatUnionId.String,
+		},
+		DDingInfo: domain.DDingInfo{
+			OpenId:  u.DDingOpenId.String,
+			UnionId: u.DDingUnionId.String,
+		},
 	}
 }
 
@@ -104,6 +114,22 @@ func (repo *CachedUserRepository) toEntity(u domain.User) dao.User {
 		},
 		Password: u.Password,
 		Birthday: u.Birthday.UnixMilli(),
+		WechatOpenId: sql.NullString{
+			String: u.WechatInfo.OpenId,
+			Valid:  u.WechatInfo.OpenId != "",
+		},
+		WechatUnionId: sql.NullString{
+			String: u.WechatInfo.UnionId,
+			Valid:  u.WechatInfo.UnionId != "",
+		},
+		DDingOpenId: sql.NullString{
+			String: u.DDingInfo.OpenId,
+			Valid:  u.DDingInfo.OpenId != "",
+		},
+		DDingUnionId: sql.NullString{
+			String: u.DDingInfo.UnionId,
+			Valid:  u.DDingInfo.UnionId != "",
+		},
 		AboutMe:  u.AboutMe,
 		Nickname: u.Nickname,
 	}
@@ -175,4 +201,20 @@ func (repo *CachedUserRepository) FindByPhone(ctx context.Context, phone string)
 	}
 	du := repo.toDomain(u)
 	return du, nil
+}
+
+func (repo *CachedUserRepository) FindByWechat(ctx context.Context, openId string) (domain.User, error) {
+	ue, err := repo.dao.FindByWechat(ctx, openId)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(ue), nil
+}
+
+func (repo *CachedUserRepository) FindByDDing(ctx context.Context, openId string) (domain.User, error) {
+	ue, err := repo.dao.FindByDDing(ctx, openId)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(ue), nil
 }

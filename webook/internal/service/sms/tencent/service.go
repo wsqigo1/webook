@@ -6,7 +6,6 @@ import (
 	"github.com/ecodeclub/ekit"
 	"github.com/ecodeclub/ekit/slice"
 	sms "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/sms/v20210111"
-	"github.com/wsqigo/basic-go/webook/pkg/limiter"
 )
 
 type Service struct {
@@ -49,7 +48,7 @@ func (s *Service) toPtrSlice(data []string) []*string {
 	})
 }
 
-func NewService(client *sms.Client, appId string, signName string, l limiter.Limiter) *Service {
+func NewService(client *sms.Client, appId string, signName string) *Service {
 	return &Service{
 		client:   client,
 		appId:    &appId,

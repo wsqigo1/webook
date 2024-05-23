@@ -4,7 +4,6 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"net/http"
@@ -19,6 +18,7 @@ const (
 
 // UserHandler 用户路由
 type UserHandler struct {
+	jwtHandler
 	svc            service.UserService
 	codeSvc        service.CodeService
 	emailEexReg    *regexp.Regexp
@@ -249,24 +249,6 @@ func (h *UserHandler) LoginJWT(ctx *gin.Context) {
 	}
 }
 
-func (h *UserHandler) setJWTToken(ctx *gin.Context, uid int64) {
-	uc := UserClaims{
-		Uid:       uid,
-		UserAgent: ctx.GetHeader("User-Agent"),
-		RegisteredClaims: jwt.RegisteredClaims{
-			// 30 分钟过期
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS512, uc)
-	tokenStr, err := token.SignedString(JWTKey)
-	if err != nil {
-		ctx.String(http.StatusOK, "系统错误")
-		return
-	}
-	ctx.Header("x-jwt-token", tokenStr)
-}
-
 // Profile 用户详情
 func (h *UserHandler) Profile(ctx *gin.Context) {
 	us := ctx.MustGet("user").(UserClaims)
@@ -349,12 +331,4 @@ func (h *UserHandler) Logout(ctx *gin.Context) {
 	sess.Save()
 
 	ctx.String(http.StatusOK, "退出登录成功")
-}
-
-var JWTKey = []byte("S4EWBerIvPWZDfH8jpFRBByIE5HcBfiP")
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	Uid       int64
-	UserAgent string
 }

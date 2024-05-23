@@ -7,7 +7,7 @@ function Page() {
 
     useEffect(() => {
         setLoading(true)
-        axios.get('/oauth2/wechat/authurl')
+        axios.get('/oauth2/dingding/authurl')
             .then((res) => res.data)
             .then((data) => {
                 setLoading(false)

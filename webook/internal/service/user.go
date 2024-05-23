@@ -19,6 +19,8 @@ type UserService interface {
 	UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error
 	FindById(ctx context.Context, userId int64) (domain.User, error)
 	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
+	FindOrCreateByWechat(ctx context.Context, info domain.WechatInfo) (domain.User, error)
+	FindOrCreateByDDing(ctx context.Context, info domain.DDingInfo) (domain.User, error)
 }
 
 type userService struct {
@@ -76,7 +78,7 @@ func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.
 		// 有两种情况
 		// err == nil, u 是可用的
 		// err != nil，系统错误
-		return u, nil
+		return u, err
 	}
 	// 用户没找到
 	err = svc.repo.Create(ctx, domain.User{
@@ -90,4 +92,46 @@ func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.
 
 	// 主从模式下，这里要从主库中读取，暂时我们不需要考虑
 	return svc.repo.FindByPhone(ctx, phone)
+}
+
+func (svc *userService) FindOrCreateByWechat(ctx context.Context, wechatInfo domain.WechatInfo) (domain.User, error) {
+	// 类似于手机号的过程，大部分人只是扫码登录，也就是数据在我们
+	u, err := svc.repo.FindByWechat(ctx, wechatInfo.OpenId)
+	if err != repository.ErrUserNotFound {
+		// 有两种情况
+		// err == nil, u 是可用的
+		// err != nil，系统错误
+		return u, err
+	}
+	// 用户没找到
+	err = svc.repo.Create(ctx, domain.User{
+		WechatInfo: wechatInfo,
+	})
+	// 有两种可能，一种是 err 恰好是唯一索引冲突（phone）
+	// 一种是 err != nil，系统错误
+	if err != nil && err != repository.ErrUserDuplicate {
+		return domain.User{}, err
+	}
+
+	// 主从模式下，这里要从主库中读取，暂时我们不需要考虑
+	return svc.repo.FindByWechat(ctx, wechatInfo.OpenId)
+}
+
+func (svc *userService) FindOrCreateByDDing(ctx context.Context, dDingInfo domain.DDingInfo) (domain.User, error) {
+	u, err := svc.repo.FindByDDing(ctx, dDingInfo.OpenId)
+	if err != repository.ErrUserNotFound {
+		return u, err
+	}
+	// 用户没找到
+	err = svc.repo.Create(ctx, domain.User{
+		DDingInfo: dDingInfo,
+	})
+	// 有两种可能，一种是 err 恰好是唯一索引冲突（phone）
+	// 一种是 err != nil，系统错误
+	if err != nil && err != repository.ErrUserDuplicate {
+		return domain.User{}, err
+	}
+
+	// 主从模式下，这里要从主库中读取，暂时我们不需要考虑
+	return svc.repo.FindByDDing(ctx, dDingInfo.OpenId)
 }
