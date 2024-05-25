@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi"
+	"go.uber.org/zap"
 	"strings"
 )
 
@@ -26,6 +27,10 @@ func (s *Service) Send(ctx context.Context, tplId string, args []string, numbers
 	request.TemplateParam = string(byteParams)
 
 	response, err := s.client.SendSms(request)
+	zap.L().Debug("请求阿里云SendSMS接口",
+		zap.Any("req", request),
+		zap.Any("resp", response))
+	// 处理异常
 	if err != nil {
 		return err
 	}

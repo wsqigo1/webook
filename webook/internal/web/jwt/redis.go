@@ -26,7 +26,7 @@ func NewRedisJWTHandler(client redis.Cmdable) Handler {
 }
 
 func (h *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
-	cnt, err := h.client.Exists(ctx, fmt.Sprintf("users:ssid:%s", ssid)).Result()
+	cnt, err := h.client.Exists(ctx, h.key(ssid)).Result()
 	if err != nil {
 		return err
 	}
@@ -61,14 +61,6 @@ func (h *RedisJWTHandler) ExtractToken(ctx *gin.Context) string {
 	}
 	return segs[1]
 }
-
-//func newJwtHandler() jwtHandler {
-//	return jwtHandler{
-//		signingMethod: jwt.SigningMethodHS512,
-//		refreshKey:    []byte("S4EWBerIvPWZDfH8jpFRBByIE5HdBfiP"),
-//		rcExpiration:  7 * 24 * time.Hour,
-//	}
-//}
 
 var _ Handler = &RedisJWTHandler{}
 
@@ -107,7 +99,8 @@ func (h *RedisJWTHandler) SetJWTToken(ctx *gin.Context, uid int64, ssid string) 
 
 func (h *RedisJWTHandler) setRefreshToken(ctx *gin.Context, uid int64, ssid string) error {
 	rc := RefreshClaims{
-		Uid: uid,
+		Uid:  uid,
+		Ssid: ssid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			// 设置为7天过期
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.rcExpiration)),

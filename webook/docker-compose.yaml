@@ -11,11 +11,19 @@ services:
       # 设置初始化脚本
       - ./script/mysql/:/docker-entrypoint-initdb.d/
     ports:
-      - "13316:3306"
+      - "23306:3306"
   redis:
-    image: 'bitnami/redis:latest'
+    image: 'redis:7.2.5'
     restart: always
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - '16379:6379'
+  etcd:
+    image: 'bitnami/etcd:latest'
+    restart: always
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+    ports:
+      # 所以你要用 12379 端口来连接etcd
+      - "12379:2379"

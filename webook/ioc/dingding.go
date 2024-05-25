@@ -2,10 +2,11 @@ package ioc
 
 import (
 	"github.com/wsqigo/basic-go/webook/internal/service/oauth2/dingding"
+	"github.com/wsqigo/basic-go/webook/pkg/logger"
 	"os"
 )
 
-func InitDingDingService() dingding.Service {
+func InitDingDingService(l logger.LoggerV1) dingding.Service {
 	appId, ok := os.LookupEnv("DINGDING_APP_ID")
 	if !ok {
 		panic("找不到环境变量 DINGDING_APP_ID")
@@ -14,5 +15,5 @@ func InitDingDingService() dingding.Service {
 	if !ok {
 		panic("找不到环境变量 DINGDING_APP_SECRET")
 	}
-	return dingding.NewService(appId, appSecret)
+	return dingding.NewService(appId, appSecret, l)
 }

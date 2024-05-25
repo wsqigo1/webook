@@ -13,14 +13,16 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/web"
+	"github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
 // Injectors from wire.go:
 
 func InitWebServer() *gin.Engine {
-	cmdable := InitRedis()
-	v := ioc.InitGinMiddlewares(cmdable)
+	cmdable := ioc.InitRedis()
+	handler := jwt.NewRedisJWTHandler(cmdable)
+	v := ioc.InitGinMiddlewares(cmdable, handler)
 	db := ioc.InitDB()
 	userDAO := dao.NewUserDao(db)
 	userCache := cache.NewUserCache(cmdable)
@@ -30,7 +32,9 @@ func InitWebServer() *gin.Engine {
 	codeRepository := repository.NewCodeRepository(codeCache)
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
-	engine := ioc.InitWebServer(v, userHandler)
+	userHandler := web.NewUserHandler(userService, handler, codeService)
+	dingdingService := ioc.InitDingDingService()
+	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, handler, userService)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2DingDingHandler)
 	return engine
 }

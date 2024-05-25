@@ -8,6 +8,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/service"
 	"github.com/wsqigo/basic-go/webook/internal/service/oauth2/dingding"
 	jwt2 "github.com/wsqigo/basic-go/webook/internal/web/jwt"
+	"github.com/wsqigo/basic-go/webook/pkg/ginx"
 	"net/http"
 )
 
@@ -41,7 +42,7 @@ func (o *OAuth2DingDingHandler) OAuth2URL(ctx *gin.Context) {
 	state := uuid.New()
 	val, err := o.svc.AuthURL(ctx, state)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "构造跳转URL失败",
 			Code: 5,
 		})
@@ -49,13 +50,13 @@ func (o *OAuth2DingDingHandler) OAuth2URL(ctx *gin.Context) {
 	}
 	err = o.setStateCookie(ctx, state)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "服务器异常",
 			Code: 5,
 		})
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: val,
 	})
 }
@@ -63,7 +64,7 @@ func (o *OAuth2DingDingHandler) OAuth2URL(ctx *gin.Context) {
 func (o *OAuth2DingDingHandler) Callback(ctx *gin.Context) {
 	err := o.verifyState(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "非法请求",
 			Code: 4,
 		})
@@ -74,7 +75,7 @@ func (o *OAuth2DingDingHandler) Callback(ctx *gin.Context) {
 	//state := ctx.Query("state")
 	dDingInfo, err := o.svc.VerifyCode(ctx, code)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "授权码有误",
 			Code: 4,
 		})
@@ -83,7 +84,7 @@ func (o *OAuth2DingDingHandler) Callback(ctx *gin.Context) {
 
 	u, err := o.userSvc.FindOrCreateByDDing(ctx, dDingInfo)
 	if err != nil {
-		ctx.JSON(http.StatusOK, Result{
+		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "系统错误",
 			Code: 5,
 		})
@@ -95,7 +96,7 @@ func (o *OAuth2DingDingHandler) Callback(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
-	ctx.JSON(http.StatusOK, Result{
+	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "OK",
 	})
 }

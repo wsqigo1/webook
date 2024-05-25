@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,7 +25,8 @@ type UserService interface {
 }
 
 type userService struct {
-	repo repository.UserRepository
+	repo   repository.UserRepository
+	logger *zap.Logger
 }
 
 func NewUserService(repo repository.UserRepository) UserService {
@@ -104,6 +106,11 @@ func (svc *userService) FindOrCreateByWechat(ctx context.Context, wechatInfo dom
 		return u, err
 	}
 	// 用户没找到
+	// 这边就是意味着是一个新用户
+	// JSON 格式的 wechatInfo
+	// 直接使用包变量
+	zap.L().Info("微信用户未注册，注册新用户",
+		zap.Any("wechatInfo", wechatInfo))
 	err = svc.repo.Create(ctx, domain.User{
 		WechatInfo: wechatInfo,
 	})
@@ -123,6 +130,7 @@ func (svc *userService) FindOrCreateByDDing(ctx context.Context, dDingInfo domai
 		return u, err
 	}
 	// 用户没找到
+	zap.L().Info("新用户", zap.Any("dDingInfo", dDingInfo))
 	err = svc.repo.Create(ctx, domain.User{
 		DDingInfo: dDingInfo,
 	})

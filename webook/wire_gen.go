@@ -17,13 +17,18 @@ import (
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
+import (
+	_ "github.com/spf13/viper/remote"
+)
+
 // Injectors from wire.go:
 
 func InitWebServer() *gin.Engine {
 	cmdable := ioc.InitRedis()
 	handler := jwt.NewRedisJWTHandler(cmdable)
-	v := ioc.InitGinMiddlewares(cmdable, handler)
-	db := ioc.InitDB()
+	loggerV1 := ioc.InitLogger()
+	v := ioc.InitGinMiddlewares(cmdable, handler, loggerV1)
+	db := ioc.InitDB(loggerV1)
 	userDAO := dao.NewUserDao(db)
 	userCache := cache.NewUserCache(cmdable)
 	userRepository := repository.NewUserRepository(userDAO, userCache)
@@ -33,7 +38,7 @@ func InitWebServer() *gin.Engine {
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(userService, handler, codeService)
-	dingdingService := ioc.InitDingDingService()
+	dingdingService := ioc.InitDingDingService(loggerV1)
 	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, handler, userService)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2DingDingHandler)
 	return engine

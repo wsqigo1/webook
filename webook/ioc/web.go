@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"context"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -9,6 +10,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/web/middleware"
 	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/ratelimit"
 	"github.com/wsqigo/basic-go/webook/pkg/limiter"
+	"github.com/wsqigo/basic-go/webook/pkg/logger"
 	"strings"
 	"time"
 )
@@ -22,7 +24,8 @@ func InitWebServer(mdls []gin.HandlerFunc,
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable, hdl jwt2.Handler) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable,
+	hdl jwt2.Handler, l logger.LoggerV1) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			//AllowAllOrigins: true,
@@ -46,6 +49,10 @@ func InitGinMiddlewares(redisClient redis.Cmdable, hdl jwt2.Handler) []gin.Handl
 			println("这是我的 Middleware")
 		},
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 10)).Build(),
+		middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
+			l.Debug("", logger.Field{Key: "req", Val: al})
+		}).
+			AllowReqBody().AllowRespBody().Build(),
 		middleware.NewLoginJWTMiddlewareBuilder(hdl).
 			IgnorePaths("/users/signup").
 			IgnorePaths("/users/login").
