@@ -14,12 +14,17 @@ import (
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
+var thirdPartySet = wire.NewSet(
+	// 第三方依赖
+	InitRedis, InitDB,
+	InitLogger)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
-		// 第三方依赖
-		ioc.InitRedis, ioc.InitDB,
+		thirdPartySet,
 		// DAO 部分
 		dao.NewUserDao,
+		dao.NewArticleGORMDAO,
 
 		// cache 部分
 		cache.NewCodeCache, cache.NewUserCache,
@@ -27,20 +32,34 @@ func InitWebServer() *gin.Engine {
 		// repository 部分
 		repository.NewUserRepository,
 		repository.NewCodeRepository,
+		repository.NewCachedArticleRepository,
 
 		// Service 部分
 		ioc.InitSMSService,
-		ioc.InitDingDingService,
 		service.NewUserService,
 		service.NewCodeService,
+		service.NewArticleService,
+		InitDingDingService,
 
 		// handler 部分
 		web.NewUserHandler,
 		jwt2.NewRedisJWTHandler,
 		web.NewOAuth2DingDingHandler,
+		web.NewArticleHandler,
 
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer,
 	)
 	return gin.Default()
+}
+
+func InitArticleHandler() *web.ArticleHandler {
+	wire.Build(
+		thirdPartySet,
+		dao.NewArticleGORMDAO,
+		repository.NewCachedArticleRepository,
+		service.NewArticleService,
+		web.NewArticleHandler,
+	)
+	return &web.ArticleHandler{}
 }

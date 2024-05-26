@@ -20,10 +20,11 @@ import (
 // Injectors from wire.go:
 
 func InitWebServer() *gin.Engine {
-	cmdable := ioc.InitRedis()
+	cmdable := InitRedis()
 	handler := jwt.NewRedisJWTHandler(cmdable)
-	v := ioc.InitGinMiddlewares(cmdable, handler)
-	db := ioc.InitDB()
+	loggerV1 := InitLogger()
+	v := ioc.InitGinMiddlewares(cmdable, handler, loggerV1)
+	db := InitDB()
 	userDAO := dao.NewUserDao(db)
 	userCache := cache.NewUserCache(cmdable)
 	userRepository := repository.NewUserRepository(userDAO, userCache)
@@ -33,8 +34,22 @@ func InitWebServer() *gin.Engine {
 	smsService := ioc.InitSMSService()
 	codeService := service.NewCodeService(codeRepository, smsService)
 	userHandler := web.NewUserHandler(userService, handler, codeService)
-	dingdingService := ioc.InitDingDingService()
+	articleDAO := dao.NewArticleGORMDAO(db)
+	articleRepository := repository.NewCachedArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := web.NewArticleHandler(articleService, loggerV1)
+	dingdingService := InitDingDingService(loggerV1)
 	oAuth2DingDingHandler := web.NewOAuth2DingDingHandler(dingdingService, handler, userService)
-	engine := ioc.InitWebServer(v, userHandler, oAuth2DingDingHandler)
+	engine := ioc.InitWebServer(v, userHandler, articleHandler, oAuth2DingDingHandler)
 	return engine
+}
+
+func InitArticleHandler() *web.ArticleHandler {
+	db := InitDB()
+	articleDAO := dao.NewArticleGORMDAO(db)
+	articleRepository := repository.NewCachedArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	loggerV1 := InitLogger()
+	articleHandler := web.NewArticleHandler(articleService, loggerV1)
+	return articleHandler
 }

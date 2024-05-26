@@ -16,10 +16,13 @@ import (
 )
 
 func InitWebServer(mdls []gin.HandlerFunc,
-	userHdl *web.UserHandler, dingdingHdl *web.OAuth2DingDingHandler) *gin.Engine {
+	userHdl *web.UserHandler,
+	artHdl *web.ArticleHandler,
+	dingdingHdl *web.OAuth2DingDingHandler) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)
 	userHdl.RegisterRoutes(server)
+	artHdl.RegisterRoutes(server)
 	dingdingHdl.RegisterRoutes(server)
 	return server
 }
