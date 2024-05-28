@@ -1,11 +1,18 @@
 package main
 
-import "net/http"
+import "fmt"
+
+func plusOne(digits []int) []int {
+	for i := len(digits) - 1; i >= 0; i-- {
+		num := (digits[i] + 1) % 10
+		digits[i] = num
+		if num != 0 {
+			return digits
+		}
+	}
+	return append([]int{1}, digits...)
+}
 
 func main() {
-	http.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello world"))
-	})
-
-	http.ListenAndServe(":9527", nil)
+	fmt.Println(plusOne([]int{9}))
 }

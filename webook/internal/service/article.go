@@ -11,6 +11,7 @@ import (
 type ArticleService interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
+	Withdraw(ctx context.Context, uid int64, id int64) error
 }
 
 type articleService struct {
@@ -37,7 +38,12 @@ func NewArticleServiceV1(authorRepo repository.ArticleAuthorRepository,
 	}
 }
 
+func (a *articleService) Withdraw(ctx context.Context, uid int64, id int64) error {
+	return a.repo.SyncStatus(ctx, uid, id, domain.ArticleStatusPrivate)
+}
+
 func (a *articleService) Save(ctx context.Context, art domain.Article) (int64, error) {
+	art.Status = domain.ArticleStatusUnpublished
 	if art.Id > 0 {
 		err := a.repo.Update(ctx, art)
 		return art.Id, err
@@ -47,10 +53,12 @@ func (a *articleService) Save(ctx context.Context, art domain.Article) (int64, e
 }
 
 func (a *articleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
+	art.Status = domain.ArticleStatusPublished
 	return a.repo.Sync(ctx, art)
 }
 
 func (a *articleService) PublishV1(ctx context.Context, art domain.Article) (int64, error) {
+	art.Status = domain.ArticleStatusPublished
 	// 想到这里要先操作制作库
 	var (
 		id  = art.Id

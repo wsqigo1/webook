@@ -8,6 +8,7 @@ package startup
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/internal/repository/cache"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
@@ -44,12 +45,17 @@ func InitWebServer() *gin.Engine {
 	return engine
 }
 
-func InitArticleHandler() *web.ArticleHandler {
-	db := InitDB()
-	articleDAO := dao.NewArticleGORMDAO(db)
-	articleRepository := repository.NewCachedArticleRepository(articleDAO)
+func InitArticleHandler(dao2 dao.ArticleDAO) *web.ArticleHandler {
+	articleRepository := repository.NewCachedArticleRepository(dao2)
 	articleService := service.NewArticleService(articleRepository)
 	loggerV1 := InitLogger()
 	articleHandler := web.NewArticleHandler(articleService, loggerV1)
 	return articleHandler
 }
+
+// wire.go:
+
+var thirdPartySet = wire.NewSet(
+
+	InitRedis, InitDB,
+	InitLogger)

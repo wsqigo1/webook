@@ -36,6 +36,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(int64(1), nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -46,6 +47,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				})
 				return authorRepo, readerRepo
 			},
@@ -55,6 +57,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					Id: 123,
 				},
+				Status: 2,
 			},
 			wantId: 1,
 		},
@@ -71,6 +74,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(errors.New("mock db error"))
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				return authorRepo, readerRepo
@@ -82,6 +86,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					Id: 123,
 				},
+				Status: 2,
 			},
 			wantErr: errors.New("mock db error"),
 		},
@@ -98,6 +103,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -108,6 +114,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(nil)
 				return authorRepo, readerRepo
 			},
@@ -118,6 +125,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					Id: 123,
 				},
+				Status: 2,
 			},
 			wantId: 11,
 		},
@@ -134,6 +142,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -144,6 +153,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(errors.New("mock db error"))
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
 					// 确保使用了制作库的 ID
@@ -153,6 +163,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(nil)
 				return authorRepo, readerRepo
 			},
@@ -163,6 +174,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					Id: 123,
 				},
+				Status: 2,
 			},
 			wantId:  11,
 			wantErr: nil,
@@ -180,6 +192,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Return(nil)
 				readerRepo := repomocks.NewMockArticleReaderRepository(ctrl)
 				readerRepo.EXPECT().Save(gomock.Any(), domain.Article{
@@ -190,6 +203,7 @@ func Test_articleService_Publish(t *testing.T) {
 					Author: domain.Author{
 						Id: 123,
 					},
+					Status: 2,
 				}).Times(3).Return(errors.New("mock db error"))
 				return authorRepo, readerRepo
 			},
@@ -200,6 +214,7 @@ func Test_articleService_Publish(t *testing.T) {
 				Author: domain.Author{
 					Id: 123,
 				},
+				Status: 2,
 			},
 			wantId:  11,
 			wantErr: errors.New("保存到线上库失败，重试次数耗尽"),

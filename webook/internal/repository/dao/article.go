@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"github.com/wsqigo/basic-go/webook/internal/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"time"
@@ -12,6 +13,7 @@ type ArticleDAO interface {
 	Insert(ctx context.Context, art Article) (int64, error)
 	UpdateById(ctx context.Context, art Article) error
 	Sync(ctx context.Context, art Article) (int64, error)
+	SyncStatus(ctx context.Context, uid int64, id int64, status domain.ArticleStatus) error
 }
 
 type ArticleGORMDAO struct {
@@ -22,6 +24,30 @@ func NewArticleGORMDAO(db *gorm.DB) ArticleDAO {
 	return &ArticleGORMDAO{
 		db: db,
 	}
+}
+
+func (a *ArticleGORMDAO) SyncStatus(ctx context.Context, uid int64, id int64, status domain.ArticleStatus) error {
+	now := time.Now().UnixMilli()
+	return a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&Article{}).
+			Where("id = ? AND author_id = ?", id, uid).
+			Updates(map[string]any{
+				"utime":  now,
+				"status": status,
+			})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errors.New("更新失败, ID不对或者作者不对")
+		}
+		return tx.Model(&PublishedArticle{}).
+			Where("id = ?", id).
+			Updates(map[string]any{
+				"utime":  now,
+				"status": status,
+			}).Error
+	})
 }
 
 func (a *ArticleGORMDAO) Sync(ctx context.Context, art Article) (int64, error) {
@@ -56,6 +82,7 @@ func (a *ArticleGORMDAO) Sync(ctx context.Context, art Article) (int64, error) {
 				"title":   pubArt.Title,
 				"content": pubArt.Content,
 				"utime":   pubArt.Utime,
+				"status":  pubArt.Status,
 			}),
 		}).Create(&pubArt).Error
 		return err
@@ -124,6 +151,7 @@ func (a *ArticleGORMDAO) UpdateById(ctx context.Context, art Article) error {
 		Updates(map[string]any{
 			"title":   art.Title,
 			"content": art.Content,
+			"status":  art.Status,
 			"utime":   now,
 		})
 	if res.Error != nil {
@@ -144,16 +172,16 @@ func (a *ArticleGORMDAO) Insert(ctx context.Context, art Article) (int64, error)
 }
 
 type Article struct {
-	Id int64 `gorm:"primaryKey,autoIncrement"`
+	Id int64 `gorm:"primaryKey,autoIncrement" bson:"id,omitempty"`
 	// 标题的长度
 	// 正常都不会超过这个长度
-	Title   string `gorm:"type=varchar(4096)"`
-	Content string `gorm:"type=BLOB"`
+	Title   string `gorm:"type=varchar(4096)" bson:"title,omitempty"`
+	Content string `gorm:"type=BLOB" bson:"content,omitempty"`
 	// 作者
 	// 我要根据创作者ID来查询
-	AuthorId int64 `gorm:"index"`
-	Status   int64
-	Ctime    int64
+	AuthorId int64 `gorm:"index" bson:"author_id,omitempty"`
+	Status   uint8 `bson:"status,omitempty"`
+	Ctime    int64 `bson:"ctime,omitempty"`
 	// 更新时间
-	Utime int64
+	Utime int64 `bson:"utime,omitempty"`
 }

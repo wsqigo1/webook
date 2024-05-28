@@ -27,3 +27,11 @@ services:
     ports:
       # 所以你要用 12379 端口来连接etcd
       - "12379:2379"
+  mongo:
+    image: 'mongo:latest'
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
