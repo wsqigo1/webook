@@ -73,7 +73,7 @@ func initViperWatch() {
 
 func initViperV1() {
 	cfile := pflag.String("config",
-		"config/config.yaml", "配置文件路径")
+		"config/dev.yaml", "配置文件路径")
 	// 这一步之后，cfile 里面才有值
 	pflag.Parse()
 	// Viper.Set("db.dsn", "localhost:3306")

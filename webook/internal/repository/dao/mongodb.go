@@ -17,7 +17,7 @@ type ArticleMongoDBDAO struct {
 	liveCol *mongo.Collection
 }
 
-var _ ArticleDAO = &ArticleMongoDBDAO{}
+//var _ ArticleDAO = &ArticleMongoDBDAO{}
 
 func NewArticleMongoDBDAO(mdb *mongo.Database, node *snowflake.Node) *ArticleMongoDBDAO {
 	return &ArticleMongoDBDAO{

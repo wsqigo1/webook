@@ -2,17 +2,15 @@ import React from 'react';
 import { Button, Form, Input } from 'antd';
 import axios from "@/axios/axios";
 import Link from "next/link";
-import router from "next/router";
 
 const onFinish = (values: any) => {
-    axios.post("/users/login", values)
+    axios.post("/users/signup", values)
         .then((res) => {
             if(res.status != 200) {
                 alert(res.statusText);
                 return
             }
-            alert(res.data)
-            router.push('/articles/list')
+           alert(res.data);
         }).catch((err) => {
             alert(err);
     })
@@ -22,8 +20,8 @@ const onFinishFailed = (errorInfo: any) => {
     alert("输入有误")
 };
 
-const LoginForm: React.FC = () => {
-    return (<Form
+const SignupForm: React.FC = () => (
+    <Form
         name="basic"
         labelCol={{ span: 8 }}
         wrapperCol={{ span: 16 }}
@@ -49,21 +47,20 @@ const LoginForm: React.FC = () => {
             <Input.Password />
         </Form.Item>
 
+        <Form.Item
+            label="确认密码"
+            name="confirmPassword"
+            rules={[{ required: true, message: '请确认密码' }]}
+        >
+            <Input.Password />
+        </Form.Item>
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Button type="primary" htmlType="submit">
-                登录
+                注册
             </Button>
-            <Link href={"/users/login_sms"} >
-                &nbsp;&nbsp;手机号登录
-            </Link>
-            <Link href={"/users/login_wechat"} >
-                &nbsp;&nbsp;微信扫码登录
-            </Link>
-            <Link href={"/users/signup"} >
-                &nbsp;&nbsp;注册
-            </Link>
+            <Link href={"/users/login"}>&nbsp;登录</Link>
         </Form.Item>
     </Form>
-)};
+);
 
-export default LoginForm;
+export default SignupForm;

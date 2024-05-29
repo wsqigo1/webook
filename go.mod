@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/aliyun/alibaba-cloud-sdk-go v1.62.722
+	github.com/aws/aws-sdk-go v1.53.10
 	github.com/bwmarrin/snowflake v0.3.0
 	github.com/dlclark/regexp2 v1.11.0
 	github.com/ecodeclub/ekit v0.0.9
@@ -13,6 +14,7 @@ require (
 	github.com/gin-contrib/sessions v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.7.0
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.4.0
 	github.com/google/wire v0.6.0
