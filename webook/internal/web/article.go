@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
@@ -14,15 +15,19 @@ import (
 )
 
 type ArticleHandler struct {
-	svc service.ArticleService
-	l   logger.LoggerV1
+	l        logger.LoggerV1
+	svc      service.ArticleService
+	interSvc service.InteractiveService
+	biz      string
 }
 
-func NewArticleHandler(svc service.ArticleService,
-	l logger.LoggerV1) *ArticleHandler {
+func NewArticleHandler(l logger.LoggerV1, svc service.ArticleService,
+	interSvc service.InteractiveService) *ArticleHandler {
 	return &ArticleHandler{
-		l:   l,
-		svc: svc,
+		l:        l,
+		svc:      svc,
+		interSvc: interSvc,
+		biz:      "article",
 	}
 }
 
@@ -36,22 +41,25 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 	// 创作者接口
 	// 在有 list 等路由的时候，无法这样注册
-	//g.GET(":id", h.Detail)
-	g.GET("/detail/:id", h.Detail)
+	//g.GET(":Id", h.Detail)
+	g.GET("/detail/:Id", h.Detail)
 	// 理论上来说应该用 GET 的，但是我实在不耐烦处理类型转化
 	// 直接 POST，JSON 转一了百了
 	// /list?offset=?&limit=?
 	g.POST("/list", h.List)
 
 	pub := g.Group("/pub")
-	pub.GET("/:id", h.PubDetail)
+	pub.GET("/:Id", h.PubDetail)
+	// 传入一个参数，true 就是点赞, false 就是不点赞
+	pub.POST("/like", h.Like)
+	//pub.POST("/collect", h.Collect)
 }
 
 // Edit 接收 Article 输入，输入一个 ID，文章的 ID
 func (h *ArticleHandler) Edit(ctx *gin.Context) {
 	type Req struct {
-		// 有 id 代表更新，没有 id 代表新建
-		Id      int64  `json:"id"`
+		// 有 Id 代表更新，没有 Id 代表新建
+		Id      int64  `json:"Id"`
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
@@ -84,8 +92,8 @@ func (h *ArticleHandler) Edit(ctx *gin.Context) {
 
 func (h *ArticleHandler) Publish(ctx *gin.Context) {
 	type Req struct {
-		// 有 id 代表更新，没有 id 代表新建
-		Id      int64  `json:"id"`
+		// 有 Id 代表更新，没有 Id 代表新建
+		Id      int64  `json:"Id"`
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
@@ -119,7 +127,7 @@ func (h *ArticleHandler) Publish(ctx *gin.Context) {
 
 func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 	type Req struct {
-		Id int64 `json:"id"`
+		Id int64 `json:"Id"`
 	}
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
@@ -144,15 +152,15 @@ func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 }
 
 func (h *ArticleHandler) Detail(ctx *gin.Context) {
-	idStr := ctx.Param("id")
+	idStr := ctx.Param("Id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "参数错误",
 			Code: 4,
 		})
-		h.l.Warn("查询文章失败，id 格式不对",
-			logger.String("id", idStr),
+		h.l.Warn("查询文章失败，Id 格式不对",
+			logger.String("Id", idStr),
 			logger.Error(err))
 		return
 	}
@@ -164,7 +172,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 		})
 		h.l.Error("查询文章失败",
 			logger.Error(err),
-			logger.Int64("id", id))
+			logger.Int64("Id", id))
 		return
 	}
 	uc := ctx.MustGet("user").(jwt.UserClaims)
@@ -175,7 +183,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 			Code: 5,
 		})
 		h.l.Error("非法查询文章",
-			logger.Int64("id", id),
+			logger.Int64("Id", id),
 			logger.Int64("uid", uc.Uid))
 		return
 	}
@@ -232,15 +240,15 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 }
 
 func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
-	idStr := ctx.Param("id")
+	idStr := ctx.Param("Id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "参数错误",
 			Code: 4,
 		})
-		h.l.Warn("查询文章失败，id 格式不对",
-			logger.String("id", idStr),
+		h.l.Warn("查询文章失败，Id 格式不对",
+			logger.String("Id", idStr),
 			logger.Error(err))
 		return
 	}
@@ -252,9 +260,22 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		})
 		h.l.Error("查询文章失败，系统错误",
 			logger.Error(err),
-			logger.Int64("id", id))
+			logger.Int64("Id", id))
 		return
 	}
+
+	go func() {
+		// 1. 如果你想摆脱原本主链路的超时控制，你就创建一个新的
+		// 2. 如果你不想，你就用 ctx
+		newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		er := h.interSvc.IncrReadCnt(newCtx, h.biz, art.Id)
+		if er != nil {
+			h.l.Error("更新阅读数事变",
+				logger.Int64("art_id", art.Id),
+				logger.Error(err))
+		}
+	}()
 
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: ArticleVo{
@@ -267,5 +288,39 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 			Ctime:      art.Ctime.Format(time.DateTime),
 			Utime:      art.Utime.Format(time.DateTime),
 		},
+	})
+}
+
+func (h *ArticleHandler) Like(ctx *gin.Context) {
+	type Req struct {
+		Id int64 `json:"id"`
+		// true 是点赞，false 是不点赞
+		Like bool `json:"like"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	uc := ctx.MustGet("user").(jwt.UserClaims)
+	var err error
+	if req.Like {
+		// 点赞
+		err = h.interSvc.Like(ctx, h.biz, req.Id, uc.Uid)
+	} else {
+		err = h.interSvc.CancelLike(ctx, h.biz, req.Id, uc.Uid)
+	}
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		h.l.Error("点赞/取消点赞失败",
+			logger.Error(err),
+			logger.Int64("uid", uc.Uid),
+			logger.Int64("art_id", req.Id))
+		return
+	}
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Msg: "OK",
 	})
 }

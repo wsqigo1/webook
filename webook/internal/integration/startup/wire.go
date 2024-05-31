@@ -19,26 +19,40 @@ var thirdPartySet = wire.NewSet(
 	InitRedis, InitDB,
 	InitLogger)
 
+var userSvcProvider = wire.NewSet(
+	dao.NewUserDao,
+	cache.NewUserCache,
+	repository.NewUserRepository,
+	service.NewUserService)
+
+var articleSvcProvider = wire.NewSet(
+	repository.NewCachedArticleRepository,
+	cache.NewArticleRedisCache,
+	dao.NewArticleGORMDAO,
+	service.NewArticleService)
+
+var interactiveSvcSet = wire.NewSet(
+	dao.NewGORMInteractiveDAO,
+	cache.NewInteractiveRedisCache,
+	repository.NewCachedInteractiveRepository,
+	service.NewInteractiveService)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		thirdPartySet,
-		// DAO 部分
-		dao.NewUserDao,
-		dao.NewArticleGORMDAO,
+		userSvcProvider,
+		articleSvcProvider,
+		interactiveSvcSet,
 
 		// cache 部分
-		cache.NewCodeCache, cache.NewUserCache,
+		cache.NewCodeCache,
 
 		// repository 部分
-		repository.NewUserRepository,
 		repository.NewCodeRepository,
-		repository.NewCachedArticleRepository,
 
 		// Service 部分
 		ioc.InitSMSService,
-		service.NewUserService,
 		service.NewCodeService,
-		service.NewArticleService,
 		InitDingDingService,
 
 		// handler 部分
@@ -56,9 +70,17 @@ func InitWebServer() *gin.Engine {
 func InitArticleHandler(dao dao.ArticleDAO) *web.ArticleHandler {
 	wire.Build(
 		thirdPartySet,
+		userSvcProvider,
+		interactiveSvcSet,
 		repository.NewCachedArticleRepository,
+		cache.NewArticleRedisCache,
 		service.NewArticleService,
 		web.NewArticleHandler,
 	)
 	return &web.ArticleHandler{}
+}
+
+func InitInteractiveService() service.InteractiveService {
+	wire.Build(thirdPartySet, interactiveSvcSet)
+	return service.NewInteractiveService(nil)
 }

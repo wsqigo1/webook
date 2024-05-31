@@ -111,7 +111,5 @@ func (a *articleService) GetById(ctx context.Context, id int64) (domain.Article,
 }
 
 func (a *articleService) GetPubByID(ctx context.Context, id int64) (domain.Article, error) {
-
-	//TODO implement me
-	panic("implement me")
+	return a.repo.GetPubByID(ctx, id)
 }

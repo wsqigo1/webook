@@ -14,6 +14,11 @@ import (
 	"github.com/wsqigo/basic-go/webook/ioc"
 )
 
+var interactiveSvcSet = wire.NewSet(dao.NewGORMInteractiveDAO,
+	cache.NewInteractiveRedisCache,
+	repository.NewCachedInteractiveRepository,
+	service.NewInteractiveService)
+
 func InitWebServer() *gin.Engine {
 	wire.Build(
 		// 第三方依赖
@@ -22,6 +27,8 @@ func InitWebServer() *gin.Engine {
 		// DAO 部分
 		dao.NewUserDao,
 		dao.NewArticleGORMDAO,
+
+		interactiveSvcSet,
 
 		// cache 部分
 		cache.NewCodeCache, cache.NewUserCache,

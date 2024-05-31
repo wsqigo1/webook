@@ -278,7 +278,7 @@ func (h *UserHandler) Profile(ctx *gin.Context) {
 	us := ctx.MustGet("user").(jwt2.UserClaims)
 	user, err := h.svc.FindById(ctx, us.Uid)
 	if err != nil {
-		// 按照道理来说，这边 id 对应的数据肯定存在，所以要是没找到，
+		// 按照道理来说，这边 Id 对应的数据肯定存在，所以要是没找到，
 		// 那说明是系统出了问题
 		ctx.String(http.StatusOK, "系统错误")
 		return
