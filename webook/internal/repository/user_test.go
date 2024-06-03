@@ -78,7 +78,7 @@ func TestCachedUserRepository_FindById(t *testing.T) {
 				c.EXPECT().Get(gomock.Any(), uid).
 					Return(domain.User{}, cache.ErrKeyNotExist)
 				d.EXPECT().FindById(gomock.Any(), uid).
-					Return(dao.User{}, dao.ErrUserNotFound)
+					Return(dao.User{}, dao.ErrRecordNotFound)
 
 				return c, d
 			},

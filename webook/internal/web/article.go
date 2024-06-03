@@ -9,6 +9,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/web/jwt"
 	"github.com/wsqigo/basic-go/webook/pkg/ginx"
 	"github.com/wsqigo/basic-go/webook/pkg/logger"
+	"golang.org/x/sync/errgroup"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,14 +43,14 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	// 创作者接口
 	// 在有 list 等路由的时候，无法这样注册
 	//g.GET(":Id", h.Detail)
-	g.GET("/detail/:Id", h.Detail)
+	g.GET("/detail/:id", h.Detail)
 	// 理论上来说应该用 GET 的，但是我实在不耐烦处理类型转化
 	// 直接 POST，JSON 转一了百了
 	// /list?offset=?&limit=?
 	g.POST("/list", h.List)
 
 	pub := g.Group("/pub")
-	pub.GET("/:Id", h.PubDetail)
+	pub.GET("/:id", h.PubDetail)
 	// 传入一个参数，true 就是点赞, false 就是不点赞
 	pub.POST("/like", h.Like)
 	pub.POST("/collect", h.Collect)
@@ -58,8 +59,8 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 // Edit 接收 Article 输入，输入一个 ID，文章的 ID
 func (h *ArticleHandler) Edit(ctx *gin.Context) {
 	type Req struct {
-		// 有 Id 代表更新，没有 Id 代表新建
-		Id      int64  `json:"Id"`
+		// 有 id 代表更新，没有 id 代表新建
+		Id      int64  `json:"id"`
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
@@ -92,8 +93,8 @@ func (h *ArticleHandler) Edit(ctx *gin.Context) {
 
 func (h *ArticleHandler) Publish(ctx *gin.Context) {
 	type Req struct {
-		// 有 Id 代表更新，没有 Id 代表新建
-		Id      int64  `json:"Id"`
+		// 有 id 代表更新，没有 id 代表新建
+		Id      int64  `json:"id"`
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
@@ -127,7 +128,7 @@ func (h *ArticleHandler) Publish(ctx *gin.Context) {
 
 func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 	type Req struct {
-		Id int64 `json:"Id"`
+		Id int64 `json:"id"`
 	}
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
@@ -152,15 +153,15 @@ func (h *ArticleHandler) Withdraw(ctx *gin.Context) {
 }
 
 func (h *ArticleHandler) Detail(ctx *gin.Context) {
-	idStr := ctx.Param("Id")
+	idStr := ctx.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "参数错误",
 			Code: 4,
 		})
-		h.l.Warn("查询文章失败，Id 格式不对",
-			logger.String("Id", idStr),
+		h.l.Warn("查询文章失败，id 格式不对",
+			logger.String("id", idStr),
 			logger.Error(err))
 		return
 	}
@@ -172,7 +173,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 		})
 		h.l.Error("查询文章失败",
 			logger.Error(err),
-			logger.Int64("Id", id))
+			logger.Int64("id", id))
 		return
 	}
 	uc := ctx.MustGet("user").(jwt.UserClaims)
@@ -183,7 +184,7 @@ func (h *ArticleHandler) Detail(ctx *gin.Context) {
 			Code: 5,
 		})
 		h.l.Error("非法查询文章",
-			logger.Int64("Id", id),
+			logger.Int64("id", id),
 			logger.Int64("uid", uc.Uid))
 		return
 	}
@@ -240,27 +241,50 @@ func (h *ArticleHandler) List(ctx *gin.Context) {
 }
 
 func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
-	idStr := ctx.Param("Id")
+	idStr := ctx.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Msg:  "参数错误",
 			Code: 4,
 		})
-		h.l.Warn("查询文章失败，Id 格式不对",
-			logger.String("Id", idStr),
+		h.l.Warn("查询文章失败，id 格式不对",
+			logger.String("id", idStr),
 			logger.Error(err))
 		return
 	}
-	art, err := h.svc.GetPubByID(ctx, id)
+
+	// 使用 error group 来同时查询
+	var (
+		eg    errgroup.Group
+		art   domain.Article
+		inter domain.Interactive
+	)
+
+	eg.Go(func() error {
+		var er error
+		art, err = h.svc.GetPubByID(ctx, id)
+		return er
+	})
+
+	uc := ctx.MustGet("user").(jwt.UserClaims)
+	eg.Go(func() error {
+		var er error
+		inter, er = h.interSvc.Get(ctx, h.biz, id, uc.Uid)
+		return er
+	})
+
+	// 等待结果
+	err = eg.Wait()
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: 5,
 			Msg:  "系统错误",
+			Code: 5,
 		})
 		h.l.Error("查询文章失败，系统错误",
-			logger.Error(err),
-			logger.Int64("Id", id))
+			logger.Int64("art_id", id),
+			logger.Int64("uid", uc.Uid),
+			logger.Error(err))
 		return
 	}
 
@@ -271,7 +295,7 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		defer cancel()
 		er := h.interSvc.IncrReadCnt(newCtx, h.biz, art.Id)
 		if er != nil {
-			h.l.Error("更新阅读数事变",
+			h.l.Error("更新阅读数失败",
 				logger.Int64("art_id", art.Id),
 				logger.Error(err))
 		}
@@ -279,14 +303,21 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: ArticleVo{
-			Id:         art.Id,
-			Title:      art.Title,
+			Id:    art.Id,
+			Title: art.Title,
+
 			Content:    art.Content,
 			AuthorId:   art.Author.Id,
 			AuthorName: art.Author.Name,
-			Status:     art.Status.ToUint8(),
-			Ctime:      art.Ctime.Format(time.DateTime),
-			Utime:      art.Utime.Format(time.DateTime),
+			ReadCnt:    inter.ReadCnt,
+			LikeCnt:    inter.LikeCnt,
+			CollectCnt: inter.CollectCnt,
+			Liked:      inter.Liked,
+			Collected:  inter.Collected,
+
+			Status: art.Status.ToUint8(),
+			Ctime:  art.Ctime.Format(time.DateTime),
+			Utime:  art.Utime.Format(time.DateTime),
 		},
 	})
 }

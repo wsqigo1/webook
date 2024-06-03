@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrUserDuplicate = dao.ErrDuplicateEmail
-	ErrUserNotFound  = dao.ErrUserNotFound
+	ErrUserNotFound  = dao.ErrRecordNotFound
 )
 
 type UserRepository interface {

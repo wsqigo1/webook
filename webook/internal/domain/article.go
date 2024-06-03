@@ -14,6 +14,7 @@ type Article struct {
 
 func (a Article) Abstract() string {
 	str := []rune(a.Content)
+	// 只取部分作为摘要
 	if len(str) > 128 {
 		str = str[:128]
 	}
