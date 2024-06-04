@@ -9,6 +9,7 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"github.com/wsqigo/basic-go/webook/internal/events/article"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/internal/repository/cache"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
@@ -38,10 +39,13 @@ func InitWebServer() *gin.Engine {
 	articleDAO := dao.NewArticleGORMDAO(db)
 	articleCache := cache.NewArticleRedisCache(cmdable)
 	articleRepository := repository.NewCachedArticleRepository(articleDAO, userRepository, articleCache, loggerV1)
-	articleService := service.NewArticleService(articleRepository)
+	client := InitSaramaClient()
+	syncProducer := InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := cache.NewInteractiveRedisCache(cmdable)
-	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, interactiveCache)
+	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, loggerV1, interactiveCache)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(loggerV1, articleService, interactiveService)
 	dingdingService := InitDingDingService(loggerV1)
@@ -59,10 +63,13 @@ func InitArticleHandler(dao2 dao.ArticleDAO) *web.ArticleHandler {
 	userRepository := repository.NewUserRepository(userDAO, userCache)
 	articleCache := cache.NewArticleRedisCache(cmdable)
 	articleRepository := repository.NewCachedArticleRepository(dao2, userRepository, articleCache, loggerV1)
-	articleService := service.NewArticleService(articleRepository)
+	client := InitSaramaClient()
+	syncProducer := InitSyncProducer(client)
+	producer := article.NewSaramaSyncProducer(syncProducer)
+	articleService := service.NewArticleService(articleRepository, producer)
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
 	interactiveCache := cache.NewInteractiveRedisCache(cmdable)
-	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, interactiveCache)
+	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, loggerV1, interactiveCache)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	articleHandler := web.NewArticleHandler(loggerV1, articleService, interactiveService)
 	return articleHandler
@@ -71,9 +78,10 @@ func InitArticleHandler(dao2 dao.ArticleDAO) *web.ArticleHandler {
 func InitInteractiveService() service.InteractiveService {
 	db := InitDB()
 	interactiveDAO := dao.NewGORMInteractiveDAO(db)
+	loggerV1 := InitLogger()
 	cmdable := InitRedis()
 	interactiveCache := cache.NewInteractiveRedisCache(cmdable)
-	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, interactiveCache)
+	interactiveRepository := repository.NewCachedInteractiveRepository(interactiveDAO, loggerV1, interactiveCache)
 	interactiveService := service.NewInteractiveService(interactiveRepository)
 	return interactiveService
 }
@@ -83,6 +91,8 @@ func InitInteractiveService() service.InteractiveService {
 var thirdPartySet = wire.NewSet(
 
 	InitRedis, InitDB,
+	InitSaramaClient,
+	InitSyncProducer,
 	InitLogger)
 
 var userSvcProvider = wire.NewSet(dao.NewUserDao, cache.NewUserCache, repository.NewUserRepository, service.NewUserService)

@@ -20,19 +20,21 @@ func TestSyncProducer(t *testing.T) {
 	//cfg.Producer.Partitioner = sarama.NewManualPartitioner
 	//cfg.Producer.Partitioner = sarama.NewConsistentCRCHashPartitioner
 	//cfg.Producer.Partitioner = sarama.NewCustomPartitioner()
-	_, _, err = producer.SendMessage(&sarama.ProducerMessage{
-		Topic: "test_topic",
-		Value: sarama.StringEncoder("hello，这是一条消息"),
-		// 会在生产者和消费者之间传递
-		Headers: []sarama.RecordHeader{
-			{
-				Key:   []byte("key1"),
-				Value: []byte("value1"),
+	for i := 0; i < 100; i++ {
+		_, _, err = producer.SendMessage(&sarama.ProducerMessage{
+			Topic: "test_topic",
+			Value: sarama.StringEncoder("hello，这是一条消息"),
+			// 会在生产者和消费者之间传递
+			Headers: []sarama.RecordHeader{
+				{
+					Key:   []byte("key1"),
+					Value: []byte("value1"),
+				},
 			},
-		},
-		Metadata: "这是 metadata",
-	})
-	assert.NoError(t, err)
+			Metadata: "这是 metadata",
+		})
+		assert.NoError(t, err)
+	}
 }
 
 func TestAsyncProducer(t *testing.T) {

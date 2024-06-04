@@ -5,6 +5,7 @@ package startup
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
+	"github.com/wsqigo/basic-go/webook/internal/events/article"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/internal/repository/cache"
 	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
@@ -17,6 +18,8 @@ import (
 var thirdPartySet = wire.NewSet(
 	// 第三方依赖
 	InitRedis, InitDB,
+	InitSaramaClient,
+	InitSyncProducer,
 	InitLogger)
 
 var userSvcProvider = wire.NewSet(
@@ -50,6 +53,8 @@ func InitWebServer() *gin.Engine {
 		// repository 部分
 		repository.NewCodeRepository,
 
+		article.NewSaramaSyncProducer,
+
 		// Service 部分
 		ioc.InitSMSService,
 		service.NewCodeService,
@@ -75,6 +80,7 @@ func InitArticleHandler(dao dao.ArticleDAO) *web.ArticleHandler {
 		repository.NewCachedArticleRepository,
 		cache.NewArticleRedisCache,
 		service.NewArticleService,
+		article.NewSaramaSyncProducer,
 		web.NewArticleHandler,
 	)
 	return &web.ArticleHandler{}

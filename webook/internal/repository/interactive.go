@@ -16,6 +16,7 @@ type InteractiveRepository interface {
 	Get(ctx context.Context, biz string, id int64) (domain.Interactive, error)
 	Liked(ctx context.Context, biz string, id int64, uid int64) (bool, error)
 	Collected(ctx context.Context, biz string, id int64, uid int64) (bool, error)
+	BatchIncrReadCnt(ctx context.Context, bizs []string, ids []int64) error
 }
 
 type CachedInteractiveRepository struct {
@@ -95,6 +96,22 @@ func (c *CachedInteractiveRepository) Collected(ctx context.Context, biz string,
 	}
 }
 
+func (c *CachedInteractiveRepository) BatchIncrReadCnt(ctx context.Context, bizs []string, bizIds []int64) error {
+	err := c.dao.BatchIncrReadCnt(ctx, bizs, bizIds)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for i, biz := range bizs {
+			er := c.cache.IncrReadCntIfPresent(ctx, biz, bizIds[i])
+			if er != nil {
+				// 记录日志
+			}
+		}
+	}()
+	return nil
+}
+
 func (c *CachedInteractiveRepository) IncrReadCnt(ctx context.Context,
 	biz string, id int64) error {
 	err := c.dao.IncrReadCnt(ctx, biz, id)
@@ -115,7 +132,25 @@ func (c *CachedInteractiveRepository) IncrLike(ctx context.Context, biz string, 
 		return err
 	}
 
-	return c.cache.IncrLikeCntIfPresent(ctx, biz, id)
+	// 这两个操作可以考虑合并为一个操作
+	err = c.cache.IncrLikeCntIfPresent(ctx, biz, id)
+	if err != nil {
+		return err
+	}
+	err = c.cache.IncrRankingIfPresent(ctx, biz, id)
+	if err == cache.RankingUpdateErr {
+		// 这是一个可选的，跟你的模型有关
+		val, err := c.dao.Get(ctx, biz, id)
+		if err != nil {
+			return err
+		}
+		return c.cache.SetRankingScore(ctx, biz, id, val.LikeCnt)
+	}
+	return err
+}
+
+func (c *CachedInteractiveRepository) LikeTop(ctx context.Context, biz string) ([]domain.Interactive, error) {
+	return c.cache.LikeTop(ctx, biz)
 }
 
 func (c *CachedInteractiveRepository) DecrLike(ctx context.Context, biz string, id int64, uid int64) error {

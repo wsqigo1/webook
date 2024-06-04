@@ -6,3 +6,6 @@ redis:
 
 db:
   dsn: root:root@tcp(localhost:23306)/webook
+kafka:
+  addr:
+    - "localhost:9094"

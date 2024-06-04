@@ -1,7 +1,6 @@
 package web
 
 import (
-	"context"
 	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
@@ -261,13 +260,13 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		inter domain.Interactive
 	)
 
+	uc := ctx.MustGet("user").(jwt.UserClaims)
 	eg.Go(func() error {
 		var er error
-		art, err = h.svc.GetPubByID(ctx, id)
+		art, err = h.svc.GetPubByID(ctx, id, uc.Uid)
 		return er
 	})
 
-	uc := ctx.MustGet("user").(jwt.UserClaims)
 	eg.Go(func() error {
 		var er error
 		inter, er = h.interSvc.Get(ctx, h.biz, id, uc.Uid)
@@ -288,18 +287,18 @@ func (h *ArticleHandler) PubDetail(ctx *gin.Context) {
 		return
 	}
 
-	go func() {
-		// 1. 如果你想摆脱原本主链路的超时控制，你就创建一个新的
-		// 2. 如果你不想，你就用 ctx
-		newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
-		er := h.interSvc.IncrReadCnt(newCtx, h.biz, art.Id)
-		if er != nil {
-			h.l.Error("更新阅读数失败",
-				logger.Int64("art_id", art.Id),
-				logger.Error(err))
-		}
-	}()
+	//go func() {
+	//	// 1. 如果你想摆脱原本主链路的超时控制，你就创建一个新的
+	//	// 2. 如果你不想，你就用 ctx
+	//	newCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	//	defer cancel()
+	//	er := h.interSvc.IncrReadCnt(newCtx, h.biz, art.Id)
+	//	if er != nil {
+	//		h.l.Error("更新阅读数失败",
+	//			logger.Int64("art_id", art.Id),
+	//			logger.Error(err))
+	//	}
+	//}()
 
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: ArticleVo{

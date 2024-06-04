@@ -10,5 +10,6 @@ if exist == 1 then
     -- 说明自增成功了
     return 1
 else
+    redis.call("HINCRBY", key, cntKey, delta)
     return 0
 end
