@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"
@@ -20,6 +21,7 @@ func main() {
 	initViperV1()
 	initLogger()
 	app := InitWebServer()
+	initPrometheus()
 	for _, c := range app.consumers {
 		err := c.Start()
 		if err != nil {
@@ -33,6 +35,15 @@ func main() {
 	// 作业：改成 8081
 	//server.Run(":8081")
 	server.Run(":8080")
+}
+
+func initPrometheus() {
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		// 专门给 prometheus 用的端口
+		// 监听 8081 端口，你也可以做成可配置的
+		http.ListenAndServe(":8081", nil)
+	}()
 }
 
 func initLogger() {

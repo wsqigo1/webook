@@ -190,6 +190,7 @@ func (r *InteractiveRedisCache) LikeTopV1(ctx context.Context, biz string) ([]do
 	// 进一步排序，然后取前 100
 	return interactives, nil
 }
+
 func (r *InteractiveRedisCache) LikeTop(ctx context.Context, biz string) ([]domain.Interactive, error) {
 	var start int64 = 0
 	var end int64 = 99

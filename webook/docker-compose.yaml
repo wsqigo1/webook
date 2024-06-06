@@ -11,6 +11,7 @@ services:
       # 设置初始化脚本
       - ./script/mysql/:/docker-entrypoint-initdb.d/
     ports:
+      # 外部访问用 23306
       - "23306:3306"
   redis:
     image: 'redis:7.2.5'
@@ -19,6 +20,14 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - '16379:6379'
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    restart: always
+    volumes:
+      # 将本地的 prometheus 文件映射到容器内的配置文件
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
   etcd:
     image: 'bitnami/etcd:latest'
     restart: always
@@ -37,6 +46,7 @@ services:
       - "27017:27017"
   kafka:
     image: 'bitnami/kafka:3.6.0'
+    restart: always
     ports:
       - '9092:9092'
       - '9094:9094'
