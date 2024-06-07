@@ -11,6 +11,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/pkg/ginx"
 	"github.com/wsqigo/basic-go/webook/pkg/ginx/middleware/prometheus"
 	"github.com/wsqigo/basic-go/webook/pkg/logger"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"strings"
 	"time"
 )
@@ -65,6 +66,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable,
 		},
 		pb.BuildResponseTime(),
 		pb.BuildActiveRequest(),
+		otelgin.Middleware("webook"),
 		//ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 10)).Build(),
 		//middleware.NewLogMiddlewareBuilder(func(ctx context.Context, al middleware.AccessLog) {
 		//	l.Debug("", logger.Field{Key: "req", Val: al})

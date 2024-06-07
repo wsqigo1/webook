@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-contrib/sessions"
@@ -11,6 +12,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	_ "github.com/spf13/viper/remote"
+	"github.com/wsqigo/basic-go/webook/ioc"
 	"go.uber.org/zap"
 	"log"
 	"net/http"
@@ -20,6 +22,12 @@ import (
 func main() {
 	initViperV1()
 	initLogger()
+	tpCancel := ioc.InitOTEL()
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		tpCancel(ctx)
+	}()
 	app := InitWebServer()
 	initPrometheus()
 	for _, c := range app.consumers {

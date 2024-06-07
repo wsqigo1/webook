@@ -9,6 +9,7 @@ import (
 	"github.com/wsqigo/basic-go/webook/pkg/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/plugin/opentelemetry/tracing"
 	"gorm.io/plugin/prometheus"
 )
 
@@ -17,7 +18,9 @@ func InitDB(l logger.LoggerV1) *gorm.DB {
 		DSN string `yaml:"dsn"`
 	}
 
-	var cfg Config
+	var cfg = Config{
+		DSN: "root:root@tcp(localhost:3316)/webook",
+	}
 	err := viper.UnmarshalKey("db", &cfg)
 	if err != nil {
 		panic(fmt.Errorf("初始化配置失败 %v", err))
@@ -67,6 +70,12 @@ func InitDB(l logger.LoggerV1) *gorm.DB {
 		},
 	})
 	err = db.Use(cb)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Use(tracing.NewPlugin(tracing.WithoutMetrics(),
+		tracing.WithDBName("webook")))
 	if err != nil {
 		panic(err)
 	}
