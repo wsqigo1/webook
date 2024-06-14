@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//go:generate mockgen -destination=./mocks/article_author.mock.go -package=daomocks -source=./article_author.go ArticleAuthorDAO
 type ArticleAuthorDAO interface {
 	Create(ctx context.Context, art Article) (int64, error)
 	Update(ctx context.Context, art Article) error

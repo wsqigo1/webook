@@ -9,6 +9,6 @@ import (
 )
 
 func InitUserRepository() *repository.UserRepository {
-	wire.Build(repository.NewUserRepository, dao.NewUserDAO, InitDB, InitRedis)
+	wire.Build(repository.NewUserRepository, dao.NewUserDAO, InitDB)
 	return &repository.UserRepository{}
 }

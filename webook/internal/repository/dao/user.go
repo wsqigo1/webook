@@ -14,6 +14,7 @@ var (
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
+//go:generate mockgen -destination=./mocks/user.mock.go -package=daomocks -source=./user.go UserDAO
 type UserDAO interface {
 	Insert(ctx context.Context, u User) error
 	UpdateById(ctx context.Context, entity User) error

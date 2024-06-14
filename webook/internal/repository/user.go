@@ -15,6 +15,7 @@ var (
 	ErrUserNotFound  = dao.ErrRecordNotFound
 )
 
+//go:generate mockgen -destination=./mocks/user.mock.go -package=repomocks -source=./user.go UserRepository
 type UserRepository interface {
 	Create(ctx context.Context, u domain.User) error
 	FindByEmail(ctx context.Context, email string) (domain.User, error)

@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+//go:generate mockgen -source=./article_reader.go -package=daomocks -destination=./mocks/article_reader.mock.go ArticleReaderDAO
 type ArticleReaderDAO interface {
 	// Upsert INSERT OR UPDATE 语义，一般简写为 Upsert
 	// 将会更新标题和内容，但是不会更新别的内容

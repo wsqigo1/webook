@@ -7,6 +7,8 @@ import (
 )
 
 // ArticleAuthorRepository 演示在 service 层面上分流
+//
+//go:generate mockgen -destination=./mocks/article_author.mock.go -package=repomocks -source=./article_author.go ArticleAuthorRepository
 type ArticleAuthorRepository interface {
 	Create(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, art domain.Article) error

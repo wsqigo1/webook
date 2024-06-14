@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+//go:generate mockgen -destination=./mocks/article.mock.go -package=repomocks -source=./article.go ArticleRepository
 type ArticleRepository interface {
 	Create(ctx context.Context, art domain.Article) (int64, error)
 	Update(ctx context.Context, art domain.Article) error
@@ -19,6 +20,7 @@ type ArticleRepository interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetByID(ctx context.Context, id int64) (domain.Article, error)
 	GetPubByID(ctx context.Context, id int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset int, limit int) ([]domain.Article, error)
 }
 
 type CachedArticleRepository struct {
@@ -65,6 +67,18 @@ func NewNewCachedArticleRepositoryV2(
 		authorDAO: authorDAO,
 		readerDAO: readerDAO,
 	}
+}
+
+func (c *CachedArticleRepository) ListPub(ctx context.Context,
+	start time.Time, offset int, limit int) ([]domain.Article, error) {
+	arts, err := c.dao.ListPub(ctx, start, offset, limit)
+	if err != nil {
+		return nil, err
+	}
+	return slice.Map[dao.PublishedArticle, domain.Article](arts,
+		func(idx int, src dao.PublishedArticle) domain.Article {
+			return c.toDomain(dao.Article(src))
+		}), nil
 }
 
 func (c *CachedArticleRepository) GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error) {

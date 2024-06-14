@@ -7,8 +7,10 @@ import (
 	"github.com/wsqigo/basic-go/webook/internal/events/article"
 	"github.com/wsqigo/basic-go/webook/internal/repository"
 	"github.com/wsqigo/basic-go/webook/pkg/logger"
+	"time"
 )
 
+//go:generate mockgen -destination=./mocks/article.mock.go -package=svcmocks -source=./article.go ArticleService
 type ArticleService interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
 	Publish(ctx context.Context, art domain.Article) (int64, error)
@@ -16,6 +18,7 @@ type ArticleService interface {
 	GetByAuthor(ctx context.Context, uid int64, offset int, limit int) ([]domain.Article, error)
 	GetById(ctx context.Context, id int64) (domain.Article, error)
 	GetPubByID(ctx context.Context, id int64, uid int64) (domain.Article, error)
+	ListPub(ctx context.Context, start time.Time, offset, limit int) ([]domain.Article, error)
 }
 
 type articleService struct {
@@ -34,6 +37,11 @@ func NewArticleService(repo repository.ArticleRepository,
 		repo:     repo,
 		producer: producer,
 	}
+}
+
+func (a *articleService) ListPub(ctx context.Context,
+	start time.Time, offset, limit int) ([]domain.Article, error) {
+	return a.repo.ListPub(ctx, start, offset, limit)
 }
 
 func NewArticleServiceV1(authorRepo repository.ArticleAuthorRepository,
