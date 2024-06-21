@@ -12,7 +12,7 @@ type Job struct {
 	Expression string
 	Executor   string
 	Cfg        string
-	CancelFunc func()
+	CancelFunc func() // 分布式锁释放
 }
 
 func (j Job) NextTime() time.Time {

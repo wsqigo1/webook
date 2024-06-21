@@ -14,8 +14,9 @@ type RankingJob struct {
 	l   logger.LoggerV1
 	// 一次运行超时的时间
 	timeout time.Duration
-	client  *rlock.Client
-	key     string
+	// 分布式锁
+	client *rlock.Client
+	key    string
 
 	localLock *sync.Mutex
 	lock      *rlock.Lock
@@ -56,7 +57,7 @@ func (r *RankingJob) Run() error {
 		// 加锁本身，我们使用一个ctx
 		// 本身我们这里设计的就是要在 r.timeout 内计算完成
 		// 刚好也做成分布式锁的超时时间
-		lock, err := r.client.Lock(ctx, r.key, r.timeout,
+		lock, err := r.client.Lock(ctx, r.key, r.timeout, // 锁的过期时间
 			&rlock.FixIntervalRetry{
 				// 每隔 100 ms 重试一次，每次重试的超时时间是 1s
 				Interval: 100 * time.Millisecond,
@@ -65,6 +66,7 @@ func (r *RankingJob) Run() error {
 			}, time.Second)
 		// 我们这里不需要处理 error，因为大部分情况下，可以相信别的节点会继续拿锁
 		if err != nil {
+			// 这边不需要返回 error，因为这时候可能是别的节点一直占着锁
 			r.localLock.Unlock()
 			r.l.Warn("获取分布式锁失败", logger.Error(err))
 			return nil

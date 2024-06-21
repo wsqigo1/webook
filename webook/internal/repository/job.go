@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/wsqigo/basic-go/webook/internal/domain"
+	"github.com/wsqigo/basic-go/webook/internal/repository/dao"
 	"time"
 )
 
@@ -17,26 +18,31 @@ type PreemptJobRepository struct {
 	dao dao.JobDAO
 }
 
+func NewPreemptJobRepository(dao dao.JobDAO) CronJobRepository {
+	return &PreemptJobRepository{dao: dao}
+}
+
 func (p *PreemptJobRepository) Preempt(ctx context.Context) (domain.Job, error) {
-	//TODO implement me
-	panic("implement me")
+	j, err := p.dao.Preempt(ctx)
+	if err != nil {
+		return domain.Job{}, err
+	}
+	return domain.Job{
+		Id:         j.Id,
+		Name:       j.Name,
+		Expression: j.Expression,
+		Executor:   j.Executor,
+	}, nil
 }
 
 func (p *PreemptJobRepository) Release(ctx context.Context, jid int64) error {
-	//TODO implement me
-	panic("implement me")
+	return p.dao.Release(ctx, jid)
 }
 
 func (p *PreemptJobRepository) UpdateUtime(ctx context.Context, id int64) error {
-	//TODO implement me
-	panic("implement me")
+	return p.dao.UpdateUtime(ctx, id)
 }
 
-func (p *PreemptJobRepository) UpdateNextTime(ctx context.Context, id int64, time time.Time) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-func NewPreemptJobRepository(dao dao.JobDAO) CronJobRepository {
-	return &PreemptJobRepository{dao: dao}
+func (p *PreemptJobRepository) UpdateNextTime(ctx context.Context, id int64, t time.Time) error {
+	return p.dao.UpdateNextTime(ctx, id, t)
 }

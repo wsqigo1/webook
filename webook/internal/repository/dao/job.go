@@ -25,6 +25,7 @@ func (dao *GORMJobDAO) Preempt(ctx context.Context) (Job, error) {
 	db := dao.db.WithContext(ctx)
 	for {
 		var j Job
+		// 到了调度的时间
 		now := time.Now().UnixMilli()
 		// 作业：这里是缺少找到续约失败的 JOB 出来执行
 		err := db.Where("status = ? AND next_time < ?", jobStatusWaiting, now).
@@ -32,6 +33,9 @@ func (dao *GORMJobDAO) Preempt(ctx context.Context) (Job, error) {
 		if err != nil {
 			return j, err
 		}
+		// 然后要开始抢占
+		// 这里利用 utime 来执行 CAS 操作
+		// 其它一些公司可能会有一些 version 之类的字段
 		res := db.WithContext(ctx).Model(&Job{}).
 			Where("id = ? AND version = ?", j.Id, j.Version).
 			Updates(map[string]any{
