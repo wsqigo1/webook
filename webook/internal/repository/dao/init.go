@@ -17,7 +17,9 @@ func InitTable(db *gorm.DB) error {
 		&PublishedArticle{},
 		&Interactive{},
 		&UserLikeBiz{},
-		&UserCollectionBiz{})
+		&UserCollectionBiz{},
+		&AsyncSms{},
+		&Job{})
 }
 
 func InitCollection(mdb *mongo.Database) error {

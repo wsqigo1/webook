@@ -34,9 +34,9 @@ func (dao *GORMJobDAO) Preempt(ctx context.Context) (Job, error) {
 			return j, err
 		}
 		// 然后要开始抢占
-		// 这里利用 utime 来执行 CAS 操作
-		// 其它一些公司可能会有一些 version 之类的字段
-		res := db.WithContext(ctx).Model(&Job{}).
+		// 这里利用 version 来执行 CAS 操作
+		// 其它一些公司可能会有一些 utime 之类的字段
+		res := db.Model(&Job{}).
 			Where("id = ? AND version = ?", j.Id, j.Version).
 			Updates(map[string]any{
 				"status":  jobStatusRunning,
@@ -55,24 +55,36 @@ func (dao *GORMJobDAO) Preempt(ctx context.Context) (Job, error) {
 }
 
 func (dao *GORMJobDAO) Release(ctx context.Context, jid int64) error {
-	//TODO implement me
-	panic("implement me")
+	now := time.Now().UnixMilli()
+	return dao.db.WithContext(ctx).Model(&Job{}).
+		Where("id = ?", jid).Updates(map[string]any{
+		"status": jobStatusWaiting,
+		"utime":  now,
+	}).Error
 }
 
-func (dao *GORMJobDAO) UpdateUtime(ctx context.Context, id int64) error {
-	//TODO implement me
-	panic("implement me")
+func (dao *GORMJobDAO) UpdateUtime(ctx context.Context, jid int64) error {
+	now := time.Now().UnixMilli()
+	return dao.db.WithContext(ctx).Model(&Job{}).
+		Where("id = ?", jid).
+		Updates(map[string]any{
+			"utime": now,
+		}).Error
 }
 
 func (dao *GORMJobDAO) UpdateNextTime(ctx context.Context, id int64, t time.Time) error {
-	//TODO implement me
-	panic("implement me")
+	now := time.Now().UnixMilli()
+	return dao.db.WithContext(ctx).Model(&Job{}).
+		Where("id = ?", id).Updates(map[string]any{
+		"utime":     now,
+		"next_time": t.UnixMilli(),
+	}).Error
 }
 
 type Job struct {
 	Id         int64  `gorm:"primaryKey,autoIncrement"`
 	Name       string `gorm:"type:varchar(128);unique"`
-	Executor   string
+	Executor   string // 执行器
 	Expression string
 	Cfg        string
 	// 状态来表达，是不是可以抢占，有没有被人抢占

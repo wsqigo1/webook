@@ -24,15 +24,12 @@ func NewPreemptJobRepository(dao dao.JobDAO) CronJobRepository {
 
 func (p *PreemptJobRepository) Preempt(ctx context.Context) (domain.Job, error) {
 	j, err := p.dao.Preempt(ctx)
-	if err != nil {
-		return domain.Job{}, err
-	}
 	return domain.Job{
 		Id:         j.Id,
 		Name:       j.Name,
 		Expression: j.Expression,
 		Executor:   j.Executor,
-	}, nil
+	}, err
 }
 
 func (p *PreemptJobRepository) Release(ctx context.Context, jid int64) error {
